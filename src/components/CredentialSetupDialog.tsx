@@ -27,7 +27,10 @@ import {
   CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { credentialStorageService } from '../services/credentialStorage';
-import type { GoogleCredentials, CredentialValidationResult } from '../services/credentialStorage';
+import type {
+  GoogleCredentials,
+  CredentialValidationResult,
+} from '../services/credentialStorage';
 
 interface CredentialSetupDialogProps {
   open: boolean;
@@ -47,14 +50,23 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
     apiKey: initialCredentials?.apiKey || '',
     folderId: initialCredentials?.folderId || '',
   });
-  
-  const [validation, setValidation] = useState<CredentialValidationResult>({ isValid: true, errors: [] });
+
+  const [validation, setValidation] = useState<CredentialValidationResult>({
+    isValid: true,
+    errors: [],
+  });
   const [isValidating, setIsValidating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [testResult, setTestResult] = useState<{ success?: boolean; error?: string } | null>(null);
-  
+  const [testResult, setTestResult] = useState<{
+    success?: boolean;
+    error?: string;
+  } | null>(null);
+
   // Get current origin for authorized origins setup
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+  const currentOrigin =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : 'http://localhost:5173';
 
   const validateForm = () => {
     const result = credentialStorageService.validateCredentials(credentials);
@@ -62,18 +74,18 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
     return result.isValid;
   };
 
-  const handleInputChange = (field: keyof GoogleCredentials) => (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = event.target.value;
-    setCredentials(prev => ({ ...prev, [field]: value }));
-    
-    // Clear validation errors when user starts typing
-    if (validation.errors.length > 0) {
-      setValidation({ isValid: true, errors: [] });
-    }
-    setTestResult(null);
-  };
+  const handleInputChange =
+    (field: keyof GoogleCredentials) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setCredentials(prev => ({ ...prev, [field]: value }));
+
+      // Clear validation errors when user starts typing
+      if (validation.errors.length > 0) {
+        setValidation({ isValid: true, errors: [] });
+      }
+      setTestResult(null);
+    };
 
   const handleTestCredentials = async () => {
     if (!validateForm()) {
@@ -84,12 +96,13 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
     setTestResult(null);
 
     try {
-      const result = await credentialStorageService.testCredentials(credentials);
+      const result =
+        await credentialStorageService.testCredentials(credentials);
       setTestResult(result);
     } catch (error) {
-      setTestResult({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      setTestResult({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     } finally {
       setIsValidating(false);
@@ -109,7 +122,9 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
     } catch (error) {
       setValidation({
         isValid: false,
-        errors: [error instanceof Error ? error.message : 'Failed to save credentials']
+        errors: [
+          error instanceof Error ? error.message : 'Failed to save credentials',
+        ],
       });
     } finally {
       setIsSaving(false);
@@ -134,20 +149,19 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { backgroundColor: '#1a1a1a', color: 'white' }
+        sx: { backgroundColor: '#1a1a1a', color: 'white' },
       }}
     >
-      <DialogTitle>
-        <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <VpnKeyIcon sx={{ color: '#1db954' }} />
-          Google API Credentials Setup
-        </Typography>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <VpnKeyIcon sx={{ color: '#1db954' }} />
+        Google API Credentials Setup
       </DialogTitle>
 
       <DialogContent>
         <Box sx={{ mb: 3 }}>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Configure your Google API credentials to access Google Drive music files.
+            Configure your Google API credentials to access Google Drive music
+            files.
           </Alert>
 
           {/* Validation Errors */}
@@ -166,14 +180,13 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
 
           {/* Test Result */}
           {testResult && (
-            <Alert 
-              severity={testResult.success ? 'success' : 'error'} 
+            <Alert
+              severity={testResult.success ? 'success' : 'error'}
               sx={{ mb: 2 }}
             >
-              {testResult.success 
-                ? 'Credentials appear to be valid!' 
-                : `Validation failed: ${testResult.error}`
-              }
+              {testResult.success
+                ? 'Credentials appear to be valid!'
+                : `Validation failed: ${testResult.error}`}
             </Alert>
           )}
 
@@ -188,7 +201,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
               error={validation.errors.some(e => e.includes('Client ID'))}
               helperText="Required: Your Google OAuth 2.0 Client ID"
               InputProps={{
-                sx: { backgroundColor: '#2a2a2a' }
+                sx: { backgroundColor: '#2a2a2a' },
               }}
             />
 
@@ -201,7 +214,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
               error={validation.errors.some(e => e.includes('API Key'))}
               helperText="Optional: API Key for enhanced functionality"
               InputProps={{
-                sx: { backgroundColor: '#2a2a2a' }
+                sx: { backgroundColor: '#2a2a2a' },
               }}
             />
 
@@ -214,7 +227,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
               error={validation.errors.some(e => e.includes('Folder ID'))}
               helperText="Optional: Specific folder to scan for music (leave empty for root)"
               InputProps={{
-                sx: { backgroundColor: '#2a2a2a' }
+                sx: { backgroundColor: '#2a2a2a' },
               }}
             />
           </Box>
@@ -225,11 +238,16 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
               variant="outlined"
               onClick={handleTestCredentials}
               disabled={isValidating || !credentials.clientId}
-              startIcon={isValidating ? <CircularProgress size={16} /> : <CheckIcon />}
+              startIcon={
+                isValidating ? <CircularProgress size={16} /> : <CheckIcon />
+              }
               sx={{
                 borderColor: '#1db954',
                 color: '#1db954',
-                '&:hover': { borderColor: '#1ed760', backgroundColor: 'rgba(29, 185, 84, 0.08)' }
+                '&:hover': {
+                  borderColor: '#1ed760',
+                  backgroundColor: 'rgba(29, 185, 84, 0.08)',
+                },
               }}
             >
               {isValidating ? 'Testing...' : 'Test Credentials'}
@@ -239,7 +257,9 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
 
         {/* Setup Instructions */}
         <Accordion sx={{ backgroundColor: '#2a2a2a', mt: 2 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#1db954' }} />}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ color: '#1db954' }} />}
+          >
             <Typography sx={{ color: '#1db954' }}>
               📖 Setup Instructions
             </Typography>
@@ -259,14 +279,14 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
                   secondary={
                     <span>
                       Go to{' '}
-                      <Link 
-                        href="https://console.cloud.google.com" 
-                        target="_blank" 
+                      <Link
+                        href="https://console.cloud.google.com"
+                        target="_blank"
                         sx={{ color: '#1db954' }}
                       >
                         Google Cloud Console
-                      </Link>
-                      {' '}and create a new project
+                      </Link>{' '}
+                      and create a new project
                     </span>
                   }
                 />
@@ -299,25 +319,39 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
                 <ListItemText
                   primary="Configure Authorized Origins"
                   secondary={
-                    <Box>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        ⚠️ <strong>Important:</strong> Add this exact origin to your OAuth credentials:
+                    <>
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        sx={{ mb: 1, display: 'block' }}
+                      >
+                        ⚠️ <strong>Important:</strong> Add this exact origin to
+                        your OAuth credentials:
                       </Typography>
-                      <Box sx={{ 
-                        p: 1, 
-                        backgroundColor: '#1a1a1a', 
-                        borderRadius: 1, 
-                        fontFamily: 'monospace',
-                        fontSize: '0.85em',
-                        color: '#1db954',
-                        border: '1px solid #1db954'
-                      }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          padding: '8px',
+                          backgroundColor: '#1a1a1a',
+                          borderRadius: '4px',
+                          fontFamily: 'monospace',
+                          fontSize: '0.85em',
+                          color: '#1db954',
+                          border: '1px solid #1db954',
+                          margin: '8px 0',
+                        }}
+                      >
                         {currentOrigin}
-                      </Box>
-                      <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#b3b3b3' }}>
-                        In Google Cloud Console → Credentials → Your OAuth Client → Authorized JavaScript origins
+                      </span>
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        sx={{ mt: 1, display: 'block', color: '#b3b3b3' }}
+                      >
+                        In Google Cloud Console → Credentials → Your OAuth
+                        Client → Authorized JavaScript origins
                       </Typography>
-                    </Box>
+                    </>
                   }
                 />
               </ListItem>
@@ -346,7 +380,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
           disabled={!credentials.clientId || isSaving}
           sx={{
             bgcolor: '#1db954',
-            '&:hover': { bgcolor: '#1ed760' }
+            '&:hover': { bgcolor: '#1ed760' },
           }}
         >
           {isSaving ? <CircularProgress size={20} /> : 'Save Credentials'}
