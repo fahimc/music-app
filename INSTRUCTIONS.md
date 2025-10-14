@@ -25,51 +25,104 @@ This plan outlines the steps to build a Spotify-like web application using **Rea
 
 ---
 
-## 2. Google Drive Integration
+## 2. Music Source Integration
+
+### **Dual Source Support**
+- Support both Google Drive and local folder access for maximum flexibility.
+- Allow users to choose their preferred music source or use both simultaneously.
+- Seamless switching between sources with unified interface.
+
+### **Google Drive Integration**
+- **Google API Setup & Configuration**
+  - User-friendly credential setup via in-app forms (no environment variables needed).
+  - Secure credential storage using browser localStorage with validation.
+  - Support for Google API Client ID, API Key, and Drive Folder ID configuration.
+  - Real-time credential validation and testing within the app.
 
 - **OAuth Integration**
   - Implement OAuth 2.0 flow to access user's Google Drive.
   - Request appropriate scopes (read-only if possible).
   - Handle sign-in and sign-out.
+  - Support credential reconfiguration and authentication reinitialize.
 
-- **Fetching Songs**
+- **Fetching Songs from Drive**
   - List audio files (.mp3, .wav, etc.) from a specific Drive folder (by folderId).
   - Fetch metadata (file name, album art if available, size, etc.).
-  - Display file list in UI.
+  - Display file list in unified UI alongside local files.
 
-- **Security**
-  - Never store user credentials.
-  - Use secure tokens, refresh on expiry.
+### **Local Folder Integration**
+- **File System Access API**
+  - Implement modern File System Access API for directory selection.
+  - Fallback to traditional file input for broader browser compatibility.
+  - Secure handling of local file permissions and access.
+
+- **Local File Processing**
+  - Scan selected directories for supported audio formats.
+  - Extract metadata from local audio files (ID3 tags, etc.).
+  - Generate thumbnails and album art from embedded data.
+  - Cache file references for quick access.
+
+- **Local Storage Management**
+  - Store directory handles and file references securely.
+  - Manage permissions and re-authorization for directory access.
+  - Handle file changes and directory updates.
+
+### **Unified Music Library**
+- Combine Google Drive and local files in single interface.
+- Consistent metadata display regardless of source.
+- Unified search across both local and cloud sources.
+- Clear source indicators (Drive vs Local icons).
+
+### **Security & Privacy**
+- Store API credentials securely in browser localStorage.
+- Handle file system permissions responsibly.
+- Use secure tokens, refresh on expiry.
+- Provide clear credential and permission management.
 
 ---
 
 ## 3. App Core Functionality
 
 - **Song List Page**
-  - Display songs with metadata, thumbnails, duration.
-  - Implement search & filter by name/artist/etc.
+  - Display songs from both Google Drive and local folders with metadata, thumbnails, duration.
+  - Implement search & filter by name/artist/etc. across all sources.
+  - Source indicators to distinguish between Drive and local files.
+  - Unified interface regardless of music source.
 
 - **Audio Player**
   - Play/pause, seek, next/previous, shuffle, repeat.
   - Show current playing song, album art, progress bar.
-  - Stream audio from Google Drive (with fallback to offline cache).
+  - Stream audio from Google Drive or play local files directly.
+  - Seamless playback across different sources.
+
+- **Music Source Management**
+  - "Add Local Folder" functionality using File System Access API.
+  - Google Drive folder connection via OAuth.
+  - Manage multiple sources simultaneously.
+  - Refresh and sync capabilities for both sources.
 
 - **Offline Download**
-  - "Download" button for each song.
-  - Use IndexedDB or Cache API to store audio files.
+  - "Download" button for Google Drive songs.
+  - Local files are inherently available offline.
+  - Use IndexedDB or Cache API to store cloud audio files.
   - List/download status (downloaded, in progress, failed).
   - Allow removing cached songs.
 
 - **Offline Mode**
-  - Show available songs when offline.
+  - Show available songs when offline (local + downloaded).
   - Gracefully degrade UI when Drive is unreachable.
+  - Clear indicators of what's available offline.
 
 - **Playlist/Queue**
-  - Basic playlist functionality (future: add, remove, reorder).
+  - Basic playlist functionality supporting mixed sources.
+  - Add, remove, reorder songs from any source.
 
-- **Settings**
-  - Google Drive re-auth.
-  - Manage offline storage (clear cache, storage usage).
+- **Settings Page**
+  - Google API credential management and editing.
+  - Local folder permissions and directory management.
+  - Google Drive account information and re-authentication.
+  - Offline storage management (view usage, clear cache).
+  - App information and version details.
 
 ---
 
@@ -105,17 +158,32 @@ This plan outlines the steps to build a Spotify-like web application using **Rea
 
 ## 6. Components Structure (Suggested)
 
+### **Core App Components**
 - `App`
 - `AuthProvider`
-- `DriveSongFetcher`
-- `SongList`
-- `SongListItem`
-- `AudioPlayer`
+- `MusicSourceProvider` (manages both Drive and local sources)
+
+### **Music Source Components**
+- `DriveSongFetcher` (Google Drive integration)
+- `LocalFolderManager` (File System Access API)
+- `MusicSourceSelector` (choose between sources)
+
+### **UI Components**
+- `SongList` (unified list supporting both sources)
+- `SongListItem` (with source indicators)
+- `AudioPlayer` (plays from any source)
+- `SourceIndicator` (Drive/Local badges)
+
+### **Management Components**
 - `OfflineManager`
 - `PlaylistManager`
-- `SettingsDialog`
+- `SettingsPage`
+- `CredentialSetupDialog`
+- `LocalFolderSetup`
 - `DownloadButton`
-- `NavBar`, `Footer`
+
+### **Layout Components**
+- `NavBar`, `HomePage`
 
 ---
 
