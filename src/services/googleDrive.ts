@@ -14,6 +14,89 @@ class GoogleDriveService {
   ];
 
   /**
+   * List all files and folders from Google Drive (for folder selection)
+   */
+  async listFiles(folderId?: string, pageToken?: string): Promise<DriveResponse> {
+    const accessToken = googleAuthService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('No access token available');
+    }
+
+    // Check if token needs refresh
+    if (googleAuthService.isTokenExpired()) {
+      await googleAuthService.refreshToken();
+    }
+
+    // Query for folders only, excluding system folders
+    let query = "mimeType='application/vnd.google-apps.folder' and trashed=false";
+    
+    // Exclude hidden/system folders (those starting with .)
+    query += " and not name contains '.'";
+    
+    if (folderId) {
+      query += ` and '${folderId}' in parents`;
+    }
+    // Don't restrict to root only - show all folders
+
+    const params = new URLSearchParams({
+      q: query,
+      fields: 'files(id,name,mimeType,iconLink,parents),nextPageToken',
+      pageSize: '100',
+      orderBy: 'name'
+    });
+
+    if (pageToken) {
+      params.append('pageToken', pageToken);
+    }
+
+    const response = await fetch(`${this.BASE_URL}/files?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Drive API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  }
+
+  /**
+   * Find a folder by name (useful for finding "Music" folder)
+   */
+  async findFolderByName(folderName: string): Promise<DriveFile | null> {
+    const accessToken = googleAuthService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('No access token available');
+    }
+
+    const query = `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`;
+    
+    const params = new URLSearchParams({
+      q: query,
+      fields: 'files(id,name,mimeType,parents)',
+      pageSize: '1',
+    });
+
+    const response = await fetch(`${this.BASE_URL}/files?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Drive API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.files && data.files.length > 0 ? data.files[0] : null;
+  }
+
+  /**
    * List audio files from a specific Google Drive folder
    */
   async listSongs(folderId?: string, pageToken?: string, maxResults = 50): Promise<DriveResponse> {

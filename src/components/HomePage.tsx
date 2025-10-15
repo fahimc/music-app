@@ -9,6 +9,7 @@ import {
   Grid,
   CircularProgress,
   Alert,
+  Link,
 } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
@@ -19,6 +20,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { CredentialSetupDialog } from './CredentialSetupDialog';
+import { FolderSelectionDialog } from './FolderSelectionDialog';
 import { credentialStorageService } from '../services/credentialStorage';
 
 const FeatureCard: React.FC<{
@@ -61,12 +63,18 @@ const FeatureCard: React.FC<{
 export const HomePage: React.FC = () => {
   const { isAuthenticated, isLoading, signIn, reinitialize, error } = useAuth();
   const [setupDialogOpen, setSetupDialogOpen] = useState(false);
+  const [folderSelectionOpen, setFolderSelectionOpen] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<string>('');
 
   useEffect(() => {
     // Check if credentials are available
     const hasStoredCredentials = credentialStorageService.hasCredentials();
     setHasCredentials(hasStoredCredentials);
+    
+    // Load selected folder
+    const credentials = credentialStorageService.loadCredentials();
+    setSelectedFolder(credentials?.folderId || '');
     
     // Auto-open setup dialog if no credentials are stored (first time user)
     if (!hasStoredCredentials) {
@@ -74,6 +82,13 @@ export const HomePage: React.FC = () => {
       setTimeout(() => setSetupDialogOpen(true), 500);
     }
   }, []);
+
+  // Show folder selection after successful sign in if no folder is selected
+  useEffect(() => {
+    if (isAuthenticated && !selectedFolder && hasCredentials) {
+      setTimeout(() => setFolderSelectionOpen(true), 500);
+    }
+  }, [isAuthenticated, selectedFolder, hasCredentials]);
 
   const handleCredentialsSaved = async () => {
     setSetupDialogOpen(false);
@@ -84,6 +99,11 @@ export const HomePage: React.FC = () => {
 
   const handleSetupCredentials = () => {
     setSetupDialogOpen(true);
+  };
+
+  const handleFolderSelected = (folderId: string, folderName: string) => {
+    setSelectedFolder(folderId);
+    console.log(`Selected folder: ${folderName} (${folderId || 'root'})`);
   };
 
   if (isLoading) {
@@ -107,19 +127,50 @@ export const HomePage: React.FC = () => {
       {error && error.includes('Authorization Origin Error') && (
         <Alert severity="error" sx={{ mb: 4 }}>
           <Typography variant="subtitle2" gutterBottom>
-            <strong>Google OAuth Configuration Issue</strong>
+            <strong>🔒 Authorization Origin Not Configured</strong>
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            Your current URL <code style={{ 
+              backgroundColor: '#2a2a2a', 
+              padding: '2px 6px', 
+              borderRadius: '4px',
+              color: '#1db954'
+            }}>{window.location.origin}</code> is not authorized in your Google OAuth settings.
           </Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            {error.split('\n\n')[0]} {/* Show main error without details */}
+            To fix this:
           </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handleSetupCredentials}
-            sx={{ borderColor: '#1db954', color: '#1db954' }}
-          >
-            Fix OAuth Settings
-          </Button>
+          <Box component="ol" sx={{ pl: 3, mb: 2, fontSize: '0.875rem' }}>
+            <li>Go to <Link href="https://console.cloud.google.com/apis/credentials" target="_blank" sx={{ color: '#1db954' }}>Google Cloud Console Credentials</Link></li>
+            <li>Click on your OAuth 2.0 Client ID</li>
+            <li>Under "Authorized JavaScript origins", click <strong>+ ADD URI</strong></li>
+            <li>Add this exact URL: <code style={{ 
+              backgroundColor: '#2a2a2a', 
+              padding: '2px 6px', 
+              borderRadius: '4px',
+              color: '#1db954',
+              fontWeight: 'bold'
+            }}>{window.location.origin}</code></li>
+            <li>Click <strong>Save</strong> and wait 5-10 minutes for changes to take effect</li>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleSetupCredentials}
+              sx={{ borderColor: '#1db954', color: '#1db954' }}
+            >
+              View Setup Instructions
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => window.location.reload()}
+              sx={{ bgcolor: '#1db954', '&:hover': { bgcolor: '#1ed760' } }}
+            >
+              I've Added the Origin - Reload
+            </Button>
+          </Box>
         </Alert>
       )}
 
@@ -318,6 +369,14 @@ export const HomePage: React.FC = () => {
         open={setupDialogOpen}
         onClose={() => setSetupDialogOpen(false)}
         onCredentialsSaved={handleCredentialsSaved}
+      />
+
+      {/* Folder Selection Dialog */}
+      <FolderSelectionDialog
+        open={folderSelectionOpen}
+        onClose={() => setFolderSelectionOpen(false)}
+        onFolderSelected={handleFolderSelected}
+        currentFolderId={selectedFolder}
       />
 
       {/* App Status for Authenticated Users */}

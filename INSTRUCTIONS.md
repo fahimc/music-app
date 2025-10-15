@@ -40,15 +40,24 @@ This plan outlines the steps to build a Spotify-like web application using **Rea
   - Real-time credential validation and testing within the app.
 
 - **OAuth Integration**
-  - Implement OAuth 2.0 flow to access user's Google Drive.
+  - Implement OAuth 2.0 flow using modern Google Identity Services (GIS).
   - Request appropriate scopes (read-only if possible).
-  - Handle sign-in and sign-out.
+  - Handle sign-in and sign-out with persistent authentication.
   - Support credential reconfiguration and authentication reinitialize.
+  - Auth state persists across browser sessions for seamless experience.
+
+- **Folder Selection & Management**
+  - Interactive folder browser to select music folder from Google Drive.
+  - Option to scan entire Drive or specific folder.
+  - Folder selection dialog appears after first login.
+  - Change selected folder anytime from Settings page.
+  - Folder ID stored securely with credentials.
 
 - **Fetching Songs from Drive**
-  - List audio files (.mp3, .wav, etc.) from a specific Drive folder (by folderId).
+  - List audio files (.mp3, .wav, etc.) from selected Drive folder.
   - Fetch metadata (file name, album art if available, size, etc.).
   - Display file list in unified UI alongside local files.
+  - Efficient folder-specific scanning for faster load times.
 
 ### **Local Folder Integration**
 - **File System Access API**
@@ -119,6 +128,8 @@ This plan outlines the steps to build a Spotify-like web application using **Rea
 
 - **Settings Page**
   - Google API credential management and editing.
+  - **Google Drive folder selection and management.**
+  - **Change music folder anytime without reconfiguring credentials.**
   - Local folder permissions and directory management.
   - Google Drive account information and re-authentication.
   - Offline storage management (view usage, clear cache).

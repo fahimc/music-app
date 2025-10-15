@@ -27,9 +27,11 @@ import {
   Refresh as RefreshIcon,
   Edit as EditIcon,
   Info as InfoIcon,
+  FolderOpen as FolderIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { CredentialSetupDialog } from './CredentialSetupDialog';
+import { FolderSelectionDialog } from './FolderSelectionDialog';
 import { LocalFolderManager } from './LocalFolderManager';
 import { credentialStorageService } from '../services/credentialStorage';
 import { offlineStorageService } from '../services/offlineStorage';
@@ -39,6 +41,7 @@ export const SettingsPage: React.FC = () => {
   const { user, isAuthenticated, signOut, reinitialize } = useAuth();
   const [credentials, setCredentials] = useState<GoogleCredentials | null>(null);
   const [setupDialogOpen, setSetupDialogOpen] = useState(false);
+  const [folderSelectionOpen, setFolderSelectionOpen] = useState(false);
   const [storageStats, setStorageStats] = useState<{
     totalSongs: number;
     totalSize: number;
@@ -70,6 +73,11 @@ export const SettingsPage: React.FC = () => {
     loadCredentials();
     // Reinitialize auth with new credentials
     await reinitialize();
+  };
+
+  const handleFolderSelected = (folderId: string, folderName: string) => {
+    console.log(`Selected folder: ${folderName} (${folderId || 'root'})`);
+    loadCredentials(); // Reload to show updated folder
   };
 
   const handleClearCredentials = () => {
@@ -194,6 +202,71 @@ export const SettingsPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Google Drive Folder Section */}
+      {isAuthenticated && credentials && (
+        <Card sx={{ mb: 3, backgroundColor: '#181818' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FolderIcon sx={{ color: '#1db954' }} />
+              Google Drive Music Folder
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Select which Google Drive folder contains your music files. 
+              The app will scan this folder for audio files.
+            </Typography>
+
+            {credentials.folderId ? (
+              <Box>
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    Music folder is configured
+                  </Typography>
+                </Alert>
+
+                <List dense>
+                  <ListItem>
+                    <ListItemIcon>
+                      <FolderIcon sx={{ color: '#1db954' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Selected Folder"
+                      secondary={credentials.folderId === '' ? 'My Drive (Root)' : credentials.folderId}
+                    />
+                  </ListItem>
+                </List>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<EditIcon />}
+                  onClick={() => setFolderSelectionOpen(true)}
+                  sx={{ borderColor: '#1db954', color: '#1db954' }}
+                >
+                  Change Folder
+                </Button>
+              </Box>
+            ) : (
+              <Box>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    No specific folder selected. The app will scan your entire Google Drive for music files.
+                  </Typography>
+                </Alert>
+
+                <Button
+                  variant="contained"
+                  startIcon={<FolderIcon />}
+                  onClick={() => setFolderSelectionOpen(true)}
+                  sx={{ bgcolor: '#1db954', '&:hover': { bgcolor: '#1ed760' } }}
+                >
+                  Select Music Folder
+                </Button>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Local Folder Management */}
       <Card sx={{ mb: 3, backgroundColor: '#181818' }}>
@@ -342,6 +415,14 @@ export const SettingsPage: React.FC = () => {
         onClose={() => setSetupDialogOpen(false)}
         onCredentialsSaved={handleCredentialsSaved}
         initialCredentials={credentials}
+      />
+
+      {/* Folder Selection Dialog */}
+      <FolderSelectionDialog
+        open={folderSelectionOpen}
+        onClose={() => setFolderSelectionOpen(false)}
+        onFolderSelected={handleFolderSelected}
+        currentFolderId={credentials?.folderId}
       />
 
       {/* Clear Storage Confirmation Dialog */}

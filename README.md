@@ -11,6 +11,8 @@ A modern, progressive web application that connects to Google Drive to stream an
 ## ✨ Features
 
 - **🔐 Google Drive Integration** - Connect your Google account and access music files directly from Drive
+- **📁 Smart Folder Selection** - Choose specific folders or scan your entire Drive for music
+- **🔄 Persistent Login** - Stay signed in across browser sessions
 - **🎵 Rich Audio Player** - Full-featured player with play/pause, seek, shuffle, repeat, and volume controls
 - **📱 Progressive Web App** - Install on your device and use offline with cached songs
 - **⬇️ Offline Downloads** - Download songs for offline listening with progress tracking
@@ -66,8 +68,10 @@ A modern, progressive web application that connects to Google Drive to stream an
 2. Create a new project or select existing one
 3. Enable the Google Drive API
 4. Create OAuth 2.0 credentials (Web application)
-5. Add your domain to authorized origins
+5. Add your domain to authorized origins (see [Authorization Fix Guide](./AUTHORIZATION_FIX.md) if you encounter errors)
 6. Copy Client ID and API Key to your `.env` file
+
+**Important:** If you see an "Authorization Origin Error", follow the [AUTHORIZATION_FIX.md](./AUTHORIZATION_FIX.md) guide for detailed instructions.
 
 ## 🏗️ Project Structure
 
@@ -99,6 +103,7 @@ src/
 - **PWA:** Vite PWA plugin with Workbox
 - **Storage:** IndexedDB with Dexie
 - **API:** Google Drive REST API
+- **Authentication:** Google Identity Services (GIS) - Modern OAuth 2.0
 - **Styling:** Material UI with custom theming
 - **Testing:** Vitest + React Testing Library
 

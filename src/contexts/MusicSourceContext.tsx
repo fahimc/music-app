@@ -111,7 +111,13 @@ export const MusicSourceProvider: React.FC<MusicSourceProviderProps> = ({ childr
     setSongsError(null);
 
     try {
-      const songs = await googleDriveService.getAllSongs();
+      // Get the selected folder ID from credentials
+      const { credentialStorageService } = await import('../services/credentialStorage');
+      const credentials = credentialStorageService.loadCredentials();
+      const folderId = credentials?.folderId;
+      
+      console.log('Loading songs from folder:', folderId || 'root');
+      const songs = await googleDriveService.getAllSongs(folderId);
       setDriveSongs(songs);
     } catch (error) {
       console.error('Error fetching Drive songs:', error);

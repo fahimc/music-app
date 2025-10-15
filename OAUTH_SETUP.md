@@ -7,6 +7,8 @@ If you're seeing this error:
 {error: 'idpiframe_initialization_failed', details: "Not a valid origin for the client: ..."}
 ```
 
+**👉 See [AUTHORIZATION_FIX.md](./AUTHORIZATION_FIX.md) for detailed step-by-step instructions.**
+
 **This means your current domain/URL is not authorized in your Google OAuth settings.**
 
 ## Step-by-Step Fix

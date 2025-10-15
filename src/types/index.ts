@@ -18,9 +18,11 @@ export interface Song {
 export interface Playlist {
   id: string;
   name: string;
-  songs: Song[];
-  createdAt: Date;
-  updatedAt: Date;
+  description?: string;
+  songIds: string[]; // Store song IDs instead of full songs
+  createdAt: string;
+  updatedAt: string;
+  coverImage?: string;
 }
 
 export interface AudioPlayerState {

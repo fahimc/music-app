@@ -15,6 +15,11 @@ import {
   InputAdornment,
   Chip,
   Stack,
+  Tabs,
+  Tab,
+  Button,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import {
   MusicNote as MusicNoteIcon,
@@ -26,12 +31,18 @@ import {
   Refresh as RefreshIcon,
   Cloud as CloudIcon,
   Computer as ComputerIcon,
+  PlaylistAdd as PlaylistAddIcon,
+  PlaylistPlay as PlaylistIcon,
+  MoreVert as MoreIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useAudioPlayerContext } from '../contexts/AudioPlayerContext';
 import { useMusicSources, type UnifiedSong } from '../contexts/MusicSourceContext';
 import { offlineStorageService } from '../services/offlineStorage';
-import type { Song } from '../types';
+import { playlistService } from '../services/playlistService';
+import { PlaylistDialog } from './PlaylistDialog';
+import type { Song, Playlist } from '../types';
 
 export const SongListPage: React.FC = () => {
   const { isAuthenticated, error: authError } = useAuth();
@@ -54,14 +65,36 @@ export const SongListPage: React.FC = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadedSongs, setDownloadedSongs] = useState<Set<string>>(new Set());
+  const [currentTab, setCurrentTab] = useState<'all' | 'playlists'>(0);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
+  const [selectedSongForPlaylist, setSelectedSongForPlaylist] = useState<Song | null>(null);
+  const [songMenuAnchor, setSongMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuSong, setMenuSong] = useState<Song | null>(null);
 
-  // Get filtered songs based on search query
-  const filteredSongs = searchQuery ? searchSongs(searchQuery) : allSongs;
+  // Get filtered songs based on search query and selected playlist
+  const getDisplayedSongs = (): UnifiedSong[] => {
+    let songs = searchQuery ? searchSongs(searchQuery) : allSongs;
+    
+    if (selectedPlaylist) {
+      songs = songs.filter(song => selectedPlaylist.songIds.includes(song.id));
+    }
+    
+    return songs;
+  };
+
+  const filteredSongs = getDisplayedSongs();
 
   // Check downloaded songs on mount and when songs change
   useEffect(() => {
     checkDownloadedSongs();
   }, [allSongs]);
+
+  // Load playlists on mount
+  useEffect(() => {
+    loadPlaylists();
+  }, []);
 
   const checkDownloadedSongs = async () => {
     const downloaded = new Set<string>();
@@ -76,6 +109,37 @@ export const SongListPage: React.FC = () => {
       }
     }
     setDownloadedSongs(downloaded);
+  };
+
+  const loadPlaylists = () => {
+    const loadedPlaylists = playlistService.getAllPlaylists();
+    setPlaylists(loadedPlaylists);
+  };
+
+  const handleOpenPlaylistDialog = (song?: Song) => {
+    setSelectedSongForPlaylist(song || null);
+    setPlaylistDialogOpen(true);
+  };
+
+  const handleRemoveFromPlaylist = (songId: string) => {
+    if (!selectedPlaylist) return;
+    
+    playlistService.removeSongFromPlaylist(selectedPlaylist.id, songId);
+    loadPlaylists();
+    
+    // Update selected playlist to reflect changes
+    const updated = playlistService.getPlaylist(selectedPlaylist.id);
+    setSelectedPlaylist(updated);
+  };
+
+  const handleSongMenuOpen = (event: React.MouseEvent<HTMLElement>, song: Song) => {
+    setSongMenuAnchor(event.currentTarget);
+    setMenuSong(song);
+  };
+
+  const handleSongMenuClose = () => {
+    setSongMenuAnchor(null);
+    setMenuSong(null);
   };
 
   const handlePlayPause = async (song: UnifiedSong) => {
@@ -224,6 +288,70 @@ export const SongListPage: React.FC = () => {
           },
         }}
       />
+
+      {/* Tabs and Playlist Management */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ flex: currentTab === 'playlists' ? '0 0 280px' : '0 0 auto' }}>
+          <Tabs value={currentTab} onChange={(e, val) => setCurrentTab(val)} sx={{ mb: 2 }}>
+            <Tab label="All Songs" value="all" />
+            <Tab label="Playlists" value="playlists" />
+          </Tabs>
+
+          {currentTab === 'playlists' && (
+            <Box>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<PlaylistAddIcon />}
+                onClick={() => handleOpenPlaylistDialog()}
+                sx={{
+                  mb: 2,
+                  borderColor: '#1db954',
+                  color: '#1db954',
+                  '&:hover': {
+                    borderColor: '#1ed760',
+                    backgroundColor: 'rgba(29, 185, 84, 0.08)',
+                  },
+                }}
+              >
+                New Playlist
+              </Button>
+
+              <List sx={{ maxHeight: '400px', overflow: 'auto' }}>
+                {playlists.map((playlist) => (
+                  <ListItemButton
+                    key={playlist.id}
+                    selected={selectedPlaylist?.id === playlist.id}
+                    onClick={() => setSelectedPlaylist(playlist)}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 0.5,
+                      '&.Mui-selected': {
+                        backgroundColor: 'rgba(29, 185, 84, 0.2)',
+                        '&:hover': {
+                          backgroundColor: 'rgba(29, 185, 84, 0.3)',
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemIcon>
+                      <PlaylistIcon sx={{ color: '#1db954' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={playlist.name}
+                      secondary={`${playlist.songIds.length} songs`}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+            </Box>
+          )}
+        </Box>
+
+        <Box sx={{ flex: 1 }}>
+          {/* Content area - stats and songs will go here */}
+        </Box>
+      </Box>
 
       {/* Stats */}
       {allSongs.length > 0 && (
