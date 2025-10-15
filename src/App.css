@@ -1,0 +1,153 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #121212;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  padding-bottom: 90px; /* Space for fixed audio player */
+}
+
+/* Custom scrollbar for webkit browsers */
+.main-content::-webkit-scrollbar {
+  width: 12px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: #121212;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #535353;
+  border-radius: 6px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #727272;
+}
+
+/* Loading animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1db954;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 2s linear infinite;
+  margin: 20px auto;
+}
+
+/* Song list item hover effects */
+.song-item {
+  transition: background-color 0.2s ease;
+}
+
+.song-item:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Audio player controls */
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: #181818;
+  border-top: 1px solid #282828;
+}
+
+/* Progress bar custom styling */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #4f4f4f;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #1db954;
+  transition: width 0.1s linear;
+}
+
+/* Volume control */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Download button states */
+.download-button {
+  transition: all 0.2s ease;
+}
+
+.download-button:hover {
+  background-color: #1ed760;
+}
+
+.download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Search bar styling */
+.search-container {
+  margin: 20px;
+}
+
+.search-input {
+  background-color: #2a2a2a !important;
+  border-radius: 50px !important;
+}
+
+.search-input input {
+  color: white;
+}
+
+.search-input .MuiOutlinedInput-notchedOutline {
+  border-color: #404040;
+}
+
+.search-input:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #1db954;
+}
+
+.search-input.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #1db954;
+}
+
+/* Settings page styling */
+.settings-section {
+  margin-bottom: 32px;
+}
+
+.settings-section h3 {
+  color: #1db954;
+  margin-bottom: 16px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .audio-controls {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  
+  .main-content {
+    padding: 0 8px;
+  }
+}
