@@ -44,7 +44,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
         </Alert>
 
         <Paper sx={{ p: 3, bgcolor: '#1a1a1a' }}>
-          <Typography variant="h6" gutterBottom sx={{ color: '#1db954', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: '#a855f7', display: 'flex', alignItems: 'center', gap: 1 }}>
             <SettingsIcon />
             Quick Fix Instructions
           </Typography>
@@ -53,8 +53,8 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
             The app cannot initialize because your Google OAuth Client ID doesn't include this website's URL in its authorized origins.
           </Typography>
 
-          <Box sx={{ mt: 2, mb: 3, p: 2, bgcolor: '#0a0a0a', borderRadius: 1, border: '1px solid #1db954' }}>
-            <Typography variant="subtitle2" gutterBottom sx={{ color: '#1db954' }}>
+          <Box sx={{ mt: 2, mb: 3, p: 2, bgcolor: '#0a0a0a', borderRadius: 1, border: '1px solid #a855f7' }}>
+            <Typography variant="subtitle2" gutterBottom sx={{ color: '#a855f7' }}>
               ⚠️ Add this exact URL to your Google OAuth settings:
             </Typography>
             <Typography 
@@ -62,7 +62,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
               component="pre" 
               sx={{ 
                 fontFamily: 'monospace', 
-                color: '#1db954',
+                color: '#a855f7',
                 fontWeight: 'bold',
                 fontSize: '1.1em',
                 m: 0,
@@ -76,7 +76,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
           <List dense>
             <ListItem>
               <ListItemIcon>
-                <AssignmentIcon sx={{ color: '#1db954' }} />
+                <AssignmentIcon sx={{ color: '#a855f7' }} />
               </ListItemIcon>
               <ListItemText
                 primary="1. Open Google Cloud Console"
@@ -87,7 +87,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
                       href="https://console.cloud.google.com/apis/credentials" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      sx={{ color: '#1db954' }}
+                      sx={{ color: '#a855f7' }}
                     >
                       Google Cloud Console → Credentials
                     </Link>
@@ -98,7 +98,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
 
             <ListItem>
               <ListItemIcon>
-                <VpnKeyIcon sx={{ color: '#1db954' }} />
+                <VpnKeyIcon sx={{ color: '#a855f7' }} />
               </ListItemIcon>
               <ListItemText
                 primary="2. Edit Your OAuth Client"
@@ -108,7 +108,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
 
             <ListItem>
               <ListItemIcon>
-                <SettingsIcon sx={{ color: '#1db954' }} />
+                <SettingsIcon sx={{ color: '#a855f7' }} />
               </ListItemIcon>
               <ListItemText
                 primary="3. Add Authorized JavaScript Origin"
@@ -123,7 +123,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
 
             <ListItem>
               <ListItemIcon>
-                <AssignmentIcon sx={{ color: '#1db954' }} />
+                <AssignmentIcon sx={{ color: '#a855f7' }} />
               </ListItemIcon>
               <ListItemText
                 primary="4. Save and Wait"
@@ -143,8 +143,8 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
               variant="contained" 
               onClick={() => window.location.reload()}
               sx={{ 
-                bgcolor: '#1db954',
-                '&:hover': { bgcolor: '#1ed760' }
+                bgcolor: '#a855f7',
+                '&:hover': { bgcolor: '#c084fc' }
               }}
             >
               I've Added the Origin - Reload Page
@@ -155,9 +155,9 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
                 variant="outlined" 
                 onClick={onRetry}
                 sx={{ 
-                  borderColor: '#1db954',
-                  color: '#1db954',
-                  '&:hover': { borderColor: '#1ed760', backgroundColor: 'rgba(29, 185, 84, 0.08)' }
+                  borderColor: '#a855f7',
+                  color: '#a855f7',
+                  '&:hover': { borderColor: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.08)' }
                 }}
               >
                 Retry
@@ -191,7 +191,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
       </Alert>
 
       <Paper sx={{ p: 3, bgcolor: '#1a1a1a' }}>
-        <Typography variant="h6" gutterBottom sx={{ color: '#1db954', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: '#a855f7', display: 'flex', alignItems: 'center', gap: 1 }}>
           <SettingsIcon />
           Setup Instructions
         </Typography>
@@ -203,7 +203,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
         <List dense>
           <ListItem>
             <ListItemIcon>
-              <AssignmentIcon sx={{ color: '#1db954' }} />
+              <AssignmentIcon sx={{ color: '#a855f7' }} />
             </ListItemIcon>
             <ListItemText
               primary="1. Create Google Cloud Project"
@@ -214,7 +214,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
                     href="https://console.cloud.google.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    sx={{ color: '#1db954' }}
+                    sx={{ color: '#a855f7' }}
                   >
                     Google Cloud Console
                   </Link>
@@ -226,7 +226,7 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
 
           <ListItem>
             <ListItemIcon>
-              <VpnKeyIcon sx={{ color: '#1db954' }} />
+              <VpnKeyIcon sx={{ color: '#a855f7' }} />
             </ListItemIcon>
             <ListItemText
               primary="2. Enable APIs and Create Credentials"
@@ -236,11 +236,11 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
 
           <ListItem>
             <ListItemIcon>
-              <SettingsIcon sx={{ color: '#1db954' }} />
+              <SettingsIcon sx={{ color: '#a855f7' }} />
             </ListItemIcon>
             <ListItemText
               primary="3. Configure Environment Variables"
-              secondary="Copy your Client ID and API Key to the .env file in the project root."
+              secondary="Copy your Client ID to the .env file in the project root."
             />
           </ListItem>
         </List>
@@ -260,7 +260,6 @@ export const ConfigurationError: React.FC<ConfigurationErrorProps> = ({
             }}
           >
 {`VITE_GOOGLE_CLIENT_ID=your_client_id_here
-VITE_GOOGLE_API_KEY=your_api_key_here
 VITE_GOOGLE_DRIVE_FOLDER_ID=optional_folder_id`}
           </Typography>
         </Box>
@@ -276,8 +275,8 @@ VITE_GOOGLE_DRIVE_FOLDER_ID=optional_folder_id`}
             variant="contained" 
             onClick={() => setSetupDialogOpen(true)}
             sx={{ 
-              bgcolor: '#1db954',
-              '&:hover': { bgcolor: '#1ed760' }
+              bgcolor: '#a855f7',
+              '&:hover': { bgcolor: '#c084fc' }
             }}
           >
             Configure Credentials
@@ -288,9 +287,9 @@ VITE_GOOGLE_DRIVE_FOLDER_ID=optional_folder_id`}
               variant="outlined" 
               onClick={onRetry}
               sx={{ 
-                borderColor: '#1db954',
-                color: '#1db954',
-                '&:hover': { borderColor: '#1ed760', backgroundColor: 'rgba(29, 185, 84, 0.08)' }
+                borderColor: '#a855f7',
+                color: '#a855f7',
+                '&:hover': { borderColor: '#c084fc', backgroundColor: 'rgba(168, 85, 247, 0.08)' }
               }}
             >
               Retry

@@ -12,15 +12,17 @@ import { SettingsPage } from './components/SettingsPage';
 import { AudioPlayer } from './components/AudioPlayer';
 import './App.css';
 
-// Spotify-like dark theme
+// Spotify-inspired dark theme with a purple accent
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#1db954',
+      main: '#a855f7',
+      light: '#c084fc',
+      dark: '#9333ea',
     },
     secondary: {
-      main: '#1ed760',
+      main: '#c084fc',
     },
     background: {
       default: '#121212',
@@ -30,9 +32,18 @@ const darkTheme = createTheme({
       primary: '#ffffff',
       secondary: '#b3b3b3',
     },
+    divider: '#282828',
   },
   typography: {
-    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontFamily: '"Circular", "Helvetica Neue", Helvetica, Arial, sans-serif',
+    h4: { fontWeight: 800, letterSpacing: '-0.02em' },
+    h5: { fontWeight: 700, letterSpacing: '-0.01em' },
+    h6: { fontWeight: 700 },
+    subtitle1: { fontWeight: 700 },
+    button: { fontWeight: 700 },
+  },
+  shape: {
+    borderRadius: 8,
   },
   components: {
     MuiButton: {
@@ -40,6 +51,22 @@ const darkTheme = createTheme({
         root: {
           textTransform: 'none',
           borderRadius: '50px',
+          fontWeight: 700,
+          padding: '8px 20px',
+          '&:focus-visible': {
+            outline: '2px solid #c084fc',
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          '&:focus-visible': {
+            outline: '2px solid #c084fc',
+            outlineOffset: 2,
+          },
         },
       },
     },
@@ -47,9 +74,67 @@ const darkTheme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: '#181818',
+          borderRadius: 8,
+          transition: 'background-color 0.2s ease, transform 0.2s ease',
           '&:hover': {
             backgroundColor: '#282828',
           },
+        },
+      },
+    },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          backgroundColor: '#282828',
+          color: '#ffffff',
+          fontSize: '0.75rem',
+          borderRadius: 4,
+          padding: '6px 10px',
+        },
+        arrow: {
+          color: '#282828',
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#1f1f1f',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#282828',
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+            '&:hover': {
+              backgroundColor: 'rgba(168, 85, 247, 0.22)',
+            },
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 700,
         },
       },
     },

@@ -1,3 +1,5 @@
+import Dexie from 'dexie';
+import type { Table } from 'dexie';
 import type { Song } from '../types';
 
 // Supported audio file extensions
@@ -12,6 +14,7 @@ interface FileSystemDirectoryHandle {
   values(): AsyncIterableIterator<[string, FileSystemHandle]>;
   getFileHandle(name: string): Promise<FileSystemFileHandle>;
   getDirectoryHandle(name: string): Promise<FileSystemDirectoryHandle>;
+  requestPermission?(options?: { mode: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>;
 }
 
 interface FileSystemFileHandle {
@@ -47,21 +50,69 @@ export interface LocalSong extends Omit<Song, 'id' | 'webViewLink' | 'createdTim
   source: 'local';
 }
 
+/**
+ * IndexedDB database for local music folders.
+ * FileSystemDirectoryHandle and File objects are structured-cloneable, so we can
+ * persist them here and re-request permission on the next visit - meaning local
+ * folders survive browser restarts (unlike localStorage, which can't store handles).
+ */
+class LocalMusicDB extends Dexie {
+  folders!: Table<LocalFolder>;
+  songs!: Table<LocalSong>;
+
+  constructor() {
+    super('MusicAppLocalDB');
+    this.version(1).stores({
+      folders: 'id, name, lastScanned, songCount',
+      songs: 'id, folderId, name, artist, album, duration, size, mimeType, localPath, lastModified',
+    });
+  }
+}
+
 class LocalFolderService {
-  private readonly STORAGE_KEY = 'musicapp_local_folders';
-  private readonly SONGS_STORAGE_KEY = 'musicapp_local_songs';
+  private db: LocalMusicDB;
   private folders: LocalFolder[] = [];
   private songs: LocalSong[] = [];
 
   constructor() {
-    this.loadFoldersFromStorage();
+    this.db = new LocalMusicDB();
+  }
+
+  /**
+   * Load persisted folders/songs from IndexedDB and re-request read permission
+   * for stored directory handles. Call once at app startup.
+   */
+  async initialize(): Promise<void> {
+    try {
+      const storedFolders = await this.db.folders.toArray();
+      const storedSongs = await this.db.songs.toArray();
+      this.folders = storedFolders;
+      this.songs = storedSongs;
+
+      // Re-request permission for each persisted handle. In Chromium, a handle
+      // stored in IndexedDB keeps its permission grant across sessions, so this
+      // is normally granted silently and keeps the folder fully usable.
+      for (const folder of this.folders) {
+        if (folder.handle?.requestPermission) {
+          try {
+            await folder.handle.requestPermission({ mode: 'read' });
+          } catch (error) {
+            console.warn(`Could not re-request permission for ${folder.name}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to initialize local folder service:', error);
+      this.folders = [];
+      this.songs = [];
+    }
   }
 
   /**
    * Check if File System Access API is supported
    */
   isSupported(): boolean {
-    return typeof window !== 'undefined' && 
+    return typeof window !== 'undefined' &&
            'showDirectoryPicker' in window &&
            typeof window.showDirectoryPicker === 'function';
   }
@@ -76,7 +127,7 @@ class LocalFolderService {
 
     try {
       const dirHandle = await window.showDirectoryPicker!();
-      
+
       const folder: LocalFolder = {
         id: this.generateFolderId(),
         name: dirHandle.name,
@@ -89,12 +140,14 @@ class LocalFolderService {
       const songs = await this.scanFolder(folder);
       folder.songCount = songs.length;
 
-      // Store the folder and songs
+      // Store the folder and songs in IndexedDB
       this.folders.push(folder);
       this.songs.push(...songs);
-      
-      this.saveFoldersToStorage();
-      this.saveSongsToStorage();
+
+      await this.db.folders.put(folder);
+      if (songs.length > 0) {
+        await this.db.songs.bulkPut(songs);
+      }
 
       return folder;
     } catch (error) {
@@ -109,12 +162,12 @@ class LocalFolderService {
   /**
    * Remove a local folder and its songs
    */
-  removeFolder(folderId: string): void {
+  async removeFolder(folderId: string): Promise<void> {
     this.folders = this.folders.filter(folder => folder.id !== folderId);
     this.songs = this.songs.filter(song => song.folderId !== folderId);
-    
-    this.saveFoldersToStorage();
-    this.saveSongsToStorage();
+
+    await this.db.folders.delete(folderId);
+    await this.db.songs.where('folderId').equals(folderId).delete();
   }
 
   /**
@@ -148,12 +201,13 @@ class LocalFolderService {
     }
 
     try {
-      // Remove existing songs from this folder
+      // Remove existing songs from this folder (in memory and IndexedDB)
       this.songs = this.songs.filter(song => song.folderId !== folderId);
+      await this.db.songs.where('folderId').equals(folderId).delete();
 
       // Scan for new songs
       const songs = await this.scanFolder(folder);
-      
+
       // Update folder info
       folder.lastScanned = new Date();
       folder.songCount = songs.length;
@@ -161,8 +215,10 @@ class LocalFolderService {
       // Add new songs
       this.songs.push(...songs);
 
-      this.saveFoldersToStorage();
-      this.saveSongsToStorage();
+      await this.db.folders.put(folder);
+      if (songs.length > 0) {
+        await this.db.songs.bulkPut(songs);
+      }
 
       return songs;
     } catch (error) {
@@ -202,7 +258,7 @@ class LocalFolderService {
    */
   private async scanFolder(folder: LocalFolder): Promise<LocalSong[]> {
     const songs: LocalSong[] = [];
-    
+
     try {
       await this.scanDirectory(folder.handle, folder.id, '', songs);
     } catch (error) {
@@ -216,7 +272,7 @@ class LocalFolderService {
    * Recursively scan a directory for audio files
    */
   private async scanDirectory(
-    dirHandle: FileSystemDirectoryHandle, 
+    dirHandle: FileSystemDirectoryHandle,
     folderId: string,
     currentPath: string,
     songs: LocalSong[]
@@ -227,7 +283,7 @@ class LocalFolderService {
 
         if (handle.kind === 'file') {
           const extension = name.toLowerCase().substring(name.lastIndexOf('.'));
-          
+
           if (SUPPORTED_EXTENSIONS.includes(extension)) {
             try {
               const file = await handle.getFile();
@@ -292,12 +348,12 @@ class LocalFolderService {
     // This is a simplified implementation
     // In a real app, you'd use a library like music-metadata-browser
     // to extract ID3 tags and other metadata
-    
+
     try {
       // Try to get duration using Audio element
       const audio = new Audio();
       const url = URL.createObjectURL(file);
-      
+
       return new Promise((resolve) => {
         audio.addEventListener('loadedmetadata', () => {
           URL.revokeObjectURL(url);
@@ -352,68 +408,6 @@ class LocalFolderService {
   }
 
   /**
-   * Save folders to localStorage
-   */
-  private saveFoldersToStorage(): void {
-    try {
-      // We can't serialize FileSystemDirectoryHandle, so we store minimal info
-      const serializable = this.folders.map(folder => ({
-        id: folder.id,
-        name: folder.name,
-        lastScanned: folder.lastScanned.toISOString(),
-        songCount: folder.songCount,
-      }));
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(serializable));
-    } catch (error) {
-      console.error('Failed to save folders to storage:', error);
-    }
-  }
-
-  /**
-   * Save songs to localStorage
-   */
-  private saveSongsToStorage(): void {
-    try {
-      // We can't serialize File objects, so we store metadata only
-      const serializable = this.songs.map(song => ({
-        id: song.id,
-        folderId: song.folderId,
-        name: song.name,
-        artist: song.artist,
-        album: song.album,
-        duration: song.duration,
-        size: song.size,
-        mimeType: song.mimeType,
-        localPath: song.localPath,
-        lastModified: song.lastModified.toISOString(),
-        source: song.source,
-        isDownloaded: song.isDownloaded,
-      }));
-      localStorage.setItem(this.SONGS_STORAGE_KEY, JSON.stringify(serializable));
-    } catch (error) {
-      console.error('Failed to save songs to storage:', error);
-    }
-  }
-
-  /**
-   * Load folders from localStorage
-   */
-  private loadFoldersFromStorage(): void {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        // Note: We lose the FileSystemDirectoryHandle references
-        // Users will need to re-add folders after browser restart
-        // This is a limitation of the File System Access API
-        this.folders = [];
-      }
-    } catch (error) {
-      console.error('Failed to load folders from storage:', error);
-      this.folders = [];
-    }
-  }
-
-  /**
    * Get storage statistics
    */
   getStorageStats(): {
@@ -422,7 +416,7 @@ class LocalFolderService {
     totalSize: number;
   } {
     const totalSize = this.songs.reduce((sum, song) => sum + (song.size || 0), 0);
-    
+
     return {
       folderCount: this.folders.length,
       songCount: this.songs.length,

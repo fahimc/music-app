@@ -59,10 +59,17 @@ export const MusicSourceProvider: React.FC<MusicSourceProviderProps> = ({ childr
   // Check if local folder support is available
   const isLocalFolderSupported = localFolderService.isSupported();
 
-  // Initialize local songs on mount
+  // Initialize local songs on mount (loads persisted folders/songs from IndexedDB)
   useEffect(() => {
-    loadLocalSongs();
-    loadLocalFolders();
+    const initLocalSources = async () => {
+      try {
+        await localFolderService.initialize();
+      } finally {
+        loadLocalSongs();
+        loadLocalFolders();
+      }
+    };
+    initLocalSources();
   }, []);
 
   // Load Drive songs when authenticated
@@ -177,9 +184,9 @@ export const MusicSourceProvider: React.FC<MusicSourceProviderProps> = ({ childr
   /**
    * Remove a local folder
    */
-  const removeLocalFolder = (folderId: string) => {
+  const removeLocalFolder = async (folderId: string) => {
     try {
-      localFolderService.removeFolder(folderId);
+      await localFolderService.removeFolder(folderId);
       loadLocalFolders();
       loadLocalSongs();
     } catch (error) {

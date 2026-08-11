@@ -2,6 +2,7 @@ interface GoogleCredentials {
   clientId: string;
   apiKey?: string;
   folderId?: string;
+  folderName?: string;
 }
 
 interface CredentialValidationResult {
@@ -21,6 +22,7 @@ class CredentialStorageService {
         clientId: credentials.clientId.trim(),
         apiKey: credentials.apiKey?.trim(),
         folderId: credentials.folderId?.trim(),
+        folderName: credentials.folderName?.trim(),
       };
       
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(sanitizedCredentials));
@@ -122,51 +124,6 @@ class CredentialStorageService {
       VITE_GOOGLE_API_KEY: credentials?.apiKey || import.meta.env.VITE_GOOGLE_API_KEY || '',
       VITE_GOOGLE_DRIVE_FOLDER_ID: credentials?.folderId || import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID || '',
     };
-  }
-
-  /**
-   * Test if stored credentials work with Google API
-   */
-  async testCredentials(credentials?: GoogleCredentials): Promise<{
-    success: boolean;
-    error?: string;
-  }> {
-    const testCreds = credentials || this.loadCredentials();
-    
-    if (!testCreds?.clientId) {
-      return { success: false, error: 'No credentials to test' };
-    }
-
-    try {
-      // Test by attempting to load Google API with the credentials
-      // This is a basic connectivity test
-      const script = document.createElement('script');
-      script.src = 'https://apis.google.com/js/api.js';
-      
-      return new Promise((resolve) => {
-        script.onload = () => {
-          // Basic test - if we can load the script, credentials format is likely valid
-          // Real validation happens during OAuth flow
-          resolve({ success: true });
-        };
-        
-        script.onerror = () => {
-          resolve({ success: false, error: 'Failed to connect to Google APIs' });
-        };
-
-        // Cleanup - remove script after test
-        script.onload = script.onerror = () => {
-          document.head.removeChild(script);
-        };
-        
-        document.head.appendChild(script);
-      });
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error during validation' 
-      };
-    }
   }
 
   /**

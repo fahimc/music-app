@@ -1,274 +1,108 @@
-# React + TypeScript + Vite
+# 🎵 Music App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-# 🎵 Music App - Spotify Clone
-
-A modern, progressive web application that connects to Google Drive to stream and download your music collection. Built with React, TypeScript, and Material UI.
+A Spotify-style music player that streams **your own music from your own Google Drive folder**. Bring your Google account, pick a Drive folder, and play. Runs as a web app (PWA) and as an Android app.
 
 ## ✨ Features
 
-- **🔐 Google Drive Integration** - Connect your Google account and access music files directly from Drive
-- **📁 Smart Folder Selection** - Choose specific folders or scan your entire Drive for music
-- **🔄 Persistent Login** - Stay signed in across browser sessions
-- **🎵 Rich Audio Player** - Full-featured player with play/pause, seek, shuffle, repeat, and volume controls
-- **📱 Progressive Web App** - Install on your device and use offline with cached songs
-- **⬇️ Offline Downloads** - Download songs for offline listening with progress tracking
-- **🔍 Search & Filter** - Find songs quickly by name, artist, or album
-- **🎨 Modern UI** - Spotify-inspired dark theme with smooth animations
-- **📱 Responsive Design** - Works perfectly on desktop, tablet, and mobile devices
+- **🔐 Bring-your-own Google Drive** — connect your Google account and play music from any Drive folder
+- **📁 In-app folder picker** — no folder IDs to fiddle with; choose the folder right in the app
+- **🎵 Rich audio player** — play/pause, seek, shuffle, repeat, volume, queue
+- **⬇️ Offline downloads** — save songs for offline listening with progress tracking
+- **🔍 Search & filter** — find songs by name, artist, or album
+- **📱 PWA + Android** — installable on the web, and a native Android APK built with Capacitor
+- **🎨 Modern UI** — Spotify-inspired dark theme in purple, responsive on desktop and mobile
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Web)
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
-- Google Cloud Console project with Drive API enabled
-- Google OAuth 2.0 credentials
+- Node.js 22+
+- npm
+- A Google Cloud project with the **Drive API** enabled and **OAuth 2.0** credentials
 
-### Installation
+### Run it
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd music-app
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and add your Google API credentials:
-   ```env
-   VITE_GOOGLE_CLIENT_ID=your_google_client_id
-   VITE_GOOGLE_API_KEY=your_google_api_key
-   VITE_GOOGLE_DRIVE_FOLDER_ID=optional_specific_folder_id
-   ```
-
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open in browser**
-   Navigate to `http://localhost:5173`
-
-### Google API Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing one
-3. Enable the Google Drive API
-4. Create OAuth 2.0 credentials (Web application)
-5. Add your domain to authorized origins (see [Authorization Fix Guide](./AUTHORIZATION_FIX.md) if you encounter errors)
-6. Copy Client ID and API Key to your `.env` file
-
-**Important:** If you see an "Authorization Origin Error", follow the [AUTHORIZATION_FIX.md](./AUTHORIZATION_FIX.md) guide for detailed instructions.
-
-## 🏗️ Project Structure
-
+```bash
+npm install
+npm run dev
 ```
-src/
-├── components/          # React components
-│   ├── NavBar.tsx      # Navigation bar
-│   ├── HomePage.tsx    # Landing page
-│   ├── SongListPage.tsx # Music library (WIP)
-│   └── SettingsPage.tsx # App settings (WIP)
-├── contexts/           # React contexts
-│   └── AuthContext.tsx # Authentication provider
-├── services/           # API and business logic
-│   ├── googleAuth.ts   # Google OAuth service
-│   ├── googleDrive.ts  # Google Drive API
-│   └── offlineStorage.ts # IndexedDB operations
-├── types/              # TypeScript definitions
-│   └── index.ts        # All type definitions
-├── hooks/              # Custom React hooks (planned)
-└── utils/              # Utility functions (planned)
+
+Open `http://localhost:5173`. On first launch, the built-in **setup wizard** walks you through connecting Google: it deep-links to the Google Cloud Console pages you need, shows you exactly which origin to authorize, and lets you paste your Client ID — no command line required.
+
+Prefer a `.env` file? Copy `.env.example` to `.env` and fill in `VITE_GOOGLE_CLIENT_ID` (and optionally `VITE_GOOGLE_DRIVE_FOLDER_ID` to skip the in-app folder picker).
+
+### Google API setup (one-time)
+
+1. [Create a Google Cloud project](https://console.cloud.google.com/projectcreate)
+2. [Enable the Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
+3. [Create OAuth credentials](https://console.cloud.google.com/apis/credentials) (type: Web application)
+4. Add your app's origin (e.g. `http://localhost:5173` or your deployed URL) to **Authorized JavaScript origins**
+5. Paste the Client ID into the app — that's it, no API key needed
+
+> Changes to OAuth settings can take a few minutes to propagate. The setup wizard inside the app includes these exact steps with deep links.
+
+## 📱 Android App
+
+The Android app is built with [Capacitor](https://capacitorjs.com/) and packaged as an APK from GitHub releases.
+
+### Install the APK
+
+1. Grab the latest APK from the **Releases** page of this repo
+2. Sideload it onto your Android device (allow "install from unknown sources")
+3. Open it, run the setup wizard, and sign in with Google
+
+### Build it yourself
+
+```bash
+npm run build          # build the web bundle
+npx cap sync android   # copy web assets into the Android project
+cd android && ./gradlew assembleDebug   # requires JDK 21 + Android SDK
+# APK lands in android/app/build/outputs/apk/debug/
+```
+
+### Release a new version
+
+Push a version tag and CI builds and attaches the APK automatically:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 ## 🛠️ Tech Stack
 
-- **Framework:** React 19 with TypeScript
-- **Build Tool:** Vite 5
-- **UI Library:** Material UI 6
-- **Routing:** React Router DOM 6
-- **PWA:** Vite PWA plugin with Workbox
-- **Storage:** IndexedDB with Dexie
-- **API:** Google Drive REST API
-- **Authentication:** Google Identity Services (GIS) - Modern OAuth 2.0
-- **Styling:** Material UI with custom theming
+- **Framework:** React 19 + TypeScript
+- **Build tool:** Vite 7 (with PWA plugin + Workbox)
+- **UI:** Material UI 7 with a custom purple Spotify-style theme
+- **Routing:** React Router
+- **Storage:** IndexedDB via Dexie (offline songs, playlists)
+- **Google:** Google Identity Services (OAuth) + Drive REST API
+- **Mobile:** Capacitor 7 (Android)
 - **Testing:** Vitest + React Testing Library
 
-## 📱 Progressive Web App
-
-This app is designed as a PWA and includes:
-
-- **Service Worker** for offline caching
-- **Web App Manifest** for installation
-- **Offline Storage** using IndexedDB
-- **Background Sync** for downloads (planned)
-
-To install as PWA:
-1. Open the app in a supported browser
-2. Look for "Install App" prompt or menu option
-3. Follow installation steps
-
-## 🔧 Development
-
-### Available Scripts
+## 🔧 Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production  
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript compiler
+npm run dev           # start dev server
+npm run build         # typecheck + production build
+npm run preview       # preview the production build
+npm run lint          # ESLint
+npm run type-check    # TypeScript check
+npm run test          # Vitest
 ```
 
-### Development Workflow
+## 📁 Project Structure
 
-1. **Authentication** - Test OAuth flow with development credentials
-2. **API Integration** - Connect to Google Drive API
-3. **Core Features** - Implement song listing and audio player
-4. **Offline Features** - Add download and offline playback
-5. **Testing** - Add comprehensive test coverage
-6. **Deployment** - Deploy as PWA
-
-## 🎯 Current Status
-
-**Development Progress: ~25%**
-
-✅ **Completed:**
-- Project setup and configuration
-- Google OAuth integration (service layer)
-- Basic UI components and navigation
-- PWA configuration  
-- Offline storage system
-
-🔄 **In Progress:**
-- Authentication UI testing
-- Error handling improvements
-
-❌ **Pending:**
-- Song list implementation
-- Audio player functionality  
-- Download features
-- Settings management
-- Comprehensive testing
-
-See [CHECKLIST.md](./CHECKLIST.md) for detailed progress tracking.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📋 Roadmap
-
-### Phase 1: Core Features (Current)
-- [ ] Complete authentication flow
-- [ ] Implement song listing from Google Drive
-- [ ] Build audio player with basic controls
-- [ ] Add download functionality
-
-### Phase 2: Enhanced Experience  
-- [ ] Playlist management
-- [ ] Advanced search and filtering
-- [ ] Audio visualization
-- [ ] Keyboard shortcuts
-
-### Phase 3: Social & Sync
-- [ ] Multiple Google accounts
-- [ ] Cloud playlist sync
-- [ ] Sharing capabilities
-- [ ] Usage analytics
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Inspired by Spotify's user interface and experience
-- Built with modern React and Material UI
-- Powered by Google Drive API for music storage
-
----
-
-**⚠️ Note:** This is a development project. Ensure you have proper rights to any music files stored in your Google Drive.
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/     # UI (wizard, player, library, settings, ...)
+├── contexts/       # Auth + music source providers
+├── hooks/          # useAudioPlayer and friends
+├── services/       # googleAuth, googleDrive, offlineStorage, ...
+├── types/          # shared TypeScript types
+└── test/           # test setup
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## ⚠️ Note
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+You are responsible for having the rights to any music stored in your Google Drive.

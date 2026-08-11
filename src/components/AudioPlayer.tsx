@@ -70,7 +70,14 @@ export const AudioPlayer: React.FC = () => {
         padding: 2,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
         {/* Song Info */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: '0 1 30%' }}>
           <Avatar
@@ -121,8 +128,8 @@ export const AudioPlayer: React.FC = () => {
               size="small"
               onClick={toggleShuffle}
               sx={{
-                color: isShuffling ? '#1db954' : '#b3b3b3',
-                '&:hover': { color: '#1db954' },
+                color: isShuffling ? '#a855f7' : '#b3b3b3',
+                '&:hover': { color: '#a855f7' },
               }}
             >
               <ShuffleIcon fontSize="small" />
@@ -141,9 +148,9 @@ export const AudioPlayer: React.FC = () => {
               onClick={togglePlayPause}
               disabled={isLoading}
               sx={{
-                backgroundColor: '#1db954',
+                backgroundColor: '#a855f7',
                 color: 'black',
-                '&:hover': { backgroundColor: '#1ed760' },
+                '&:hover': { backgroundColor: '#c084fc' },
                 '&:disabled': { backgroundColor: '#666', color: '#999' },
                 width: 48,
                 height: 48,
@@ -179,8 +186,8 @@ export const AudioPlayer: React.FC = () => {
               size="small"
               onClick={toggleRepeat}
               sx={{
-                color: isRepeating ? '#1db954' : '#b3b3b3',
-                '&:hover': { color: '#1db954' },
+                color: isRepeating ? '#a855f7' : '#b3b3b3',
+                '&:hover': { color: '#a855f7' },
               }}
             >
               <RepeatIcon fontSize="small" />
@@ -200,7 +207,7 @@ export const AudioPlayer: React.FC = () => {
               }}
               sx={{
                 flex: 1,
-                color: '#1db954',
+                color: '#a855f7',
                 height: 4,
                 '& .MuiSlider-thumb': {
                   width: 12,
@@ -224,7 +231,15 @@ export const AudioPlayer: React.FC = () => {
         </Box>
 
         {/* Volume Control */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '0 1 30%', justifyContent: 'flex-end' }}>
+        <Box
+          sx={{
+            display: { xs: 'none', sm: 'flex' },
+            alignItems: 'center',
+            gap: 1,
+            flex: '0 1 30%',
+            justifyContent: 'flex-end',
+          }}
+        >
           <IconButton
             size="small"
             onClick={toggleMute}
@@ -237,7 +252,7 @@ export const AudioPlayer: React.FC = () => {
             onChange={(_, value) => setVolume((value as number) / 100)}
             sx={{
               width: 100,
-              color: '#1db954',
+              color: '#a855f7',
               '& .MuiSlider-thumb': {
                 width: 12,
                 height: 12,

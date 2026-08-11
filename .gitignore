@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Local environment config (never commit real credentials)
+.env
+.env.local
+.env.*.local
+
+# Local tooling
+.freebuff/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

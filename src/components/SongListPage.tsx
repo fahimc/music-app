@@ -36,11 +36,13 @@ import {
   MoreVert as MoreIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useAudioPlayerContext } from '../contexts/AudioPlayerContext';
 import { useMusicSources, type UnifiedSong } from '../contexts/MusicSourceContext';
 import { offlineStorageService } from '../services/offlineStorage';
 import { playlistService } from '../services/playlistService';
+import { googleDriveService } from '../services/googleDrive';
 import { PlaylistDialog } from './PlaylistDialog';
 import type { Song, Playlist } from '../types';
 
@@ -61,11 +63,15 @@ export const SongListPage: React.FC = () => {
     refreshSongs,
     searchSongs,
     createSongUrl,
+    addLocalFolder,
+    isLocalFolderSupported,
   } = useMusicSources();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [downloadedSongs, setDownloadedSongs] = useState<Set<string>>(new Set());
-  const [currentTab, setCurrentTab] = useState<'all' | 'playlists'>(0);
+  const [downloadingSongs, setDownloadingSongs] = useState<Map<string, number>>(new Map());
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<'all' | 'playlists'>('all');
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
@@ -142,6 +148,14 @@ export const SongListPage: React.FC = () => {
     setMenuSong(null);
   };
 
+  const handleAddLocalFolder = async () => {
+    try {
+      await addLocalFolder();
+    } catch (err) {
+      console.error('Error adding local folder:', err);
+    }
+  };
+
   const handlePlayPause = async (song: UnifiedSong) => {
     if (currentSong?.id === song.id) {
       togglePlayPause();
@@ -187,21 +201,47 @@ export const SongListPage: React.FC = () => {
   };
 
   const handleDownload = async (song: UnifiedSong) => {
-    if (song.source === 'local') {
-      return; // Local files don't need downloading
-    }
+    if (song.source === 'local') return; // Local files don't need downloading
+    if (downloadingSongs.has(song.id) || downloadedSongs.has(song.id)) return;
+
+    setDownloadError(null);
+    setDownloadingSongs(prev => new Map(prev).set(song.id, 0));
 
     try {
-      // TODO: Implement actual download functionality for Drive songs
-      console.log('Download requested for:', song.name);
-      
-      // Placeholder: Mark as downloaded
-      const newDownloaded = new Set(downloadedSongs);
-      newDownloaded.add(song.id);
-      setDownloadedSongs(newDownloaded);
-      
+      // Fetch the audio with the authenticated media endpoint
+      const blob = await googleDriveService.downloadSong(song, (progress) => {
+        setDownloadingSongs(prev => new Map(prev).set(song.id, progress));
+      });
+
+      const songForStorage: Song = {
+        id: song.id,
+        name: song.name,
+        artist: song.artist,
+        album: song.album,
+        duration: song.duration,
+        size: song.size,
+        mimeType: song.mimeType,
+        downloadUrl: song.downloadUrl,
+        thumbnailLink: song.thumbnailLink,
+        isDownloaded: true,
+        downloadProgress: 100,
+        createdTime: song.createdTime,
+        modifiedTime: song.modifiedTime,
+      };
+
+      // Store in IndexedDB for offline playback
+      await offlineStorageService.storeSong(songForStorage, blob);
+
+      setDownloadedSongs(prev => new Set(prev).add(song.id));
     } catch (err) {
       console.error('Download error:', err);
+      setDownloadError(err instanceof Error ? err.message : 'Failed to download song');
+    } finally {
+      setDownloadingSongs(prev => {
+        const next = new Map(prev);
+        next.delete(song.id);
+        return next;
+      });
     }
   };
 
@@ -253,7 +293,7 @@ export const SongListPage: React.FC = () => {
         <IconButton 
           onClick={refreshSongs} 
           disabled={isLoadingSongs}
-          sx={{ color: '#1db954' }}
+          sx={{ color: '#a855f7' }}
         >
           <RefreshIcon />
         </IconButton>
@@ -280,77 +320,71 @@ export const SongListPage: React.FC = () => {
               borderColor: '#404040',
             },
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#1db954',
+              borderColor: '#a855f7',
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#1db954',
+              borderColor: '#a855f7',
             },
           },
         }}
       />
 
       {/* Tabs and Playlist Management */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <Box sx={{ flex: currentTab === 'playlists' ? '0 0 280px' : '0 0 auto' }}>
-          <Tabs value={currentTab} onChange={(e, val) => setCurrentTab(val)} sx={{ mb: 2 }}>
-            <Tab label="All Songs" value="all" />
-            <Tab label="Playlists" value="playlists" />
-          </Tabs>
+      <Box sx={{ mb: 3 }}>
+        <Tabs value={currentTab} onChange={(_, val) => setCurrentTab(val)} sx={{ mb: 2 }}>
+          <Tab label="All Songs" value="all" />
+          <Tab label="Playlists" value="playlists" />
+        </Tabs>
 
-          {currentTab === 'playlists' && (
-            <Box>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<PlaylistAddIcon />}
-                onClick={() => handleOpenPlaylistDialog()}
-                sx={{
-                  mb: 2,
-                  borderColor: '#1db954',
-                  color: '#1db954',
-                  '&:hover': {
-                    borderColor: '#1ed760',
-                    backgroundColor: 'rgba(29, 185, 84, 0.08)',
-                  },
-                }}
-              >
-                New Playlist
-              </Button>
+        {currentTab === 'playlists' && (
+          <Box sx={{ maxWidth: 360 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<PlaylistAddIcon />}
+              onClick={() => handleOpenPlaylistDialog()}
+              sx={{
+                mb: 2,
+                borderColor: '#a855f7',
+                color: '#a855f7',
+                '&:hover': {
+                  borderColor: '#c084fc',
+                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
+                },
+              }}
+            >
+              New Playlist
+            </Button>
 
-              <List sx={{ maxHeight: '400px', overflow: 'auto' }}>
-                {playlists.map((playlist) => (
-                  <ListItemButton
-                    key={playlist.id}
-                    selected={selectedPlaylist?.id === playlist.id}
-                    onClick={() => setSelectedPlaylist(playlist)}
-                    sx={{
-                      borderRadius: 1,
-                      mb: 0.5,
-                      '&.Mui-selected': {
-                        backgroundColor: 'rgba(29, 185, 84, 0.2)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(29, 185, 84, 0.3)',
-                        },
+            <List sx={{ maxHeight: '400px', overflow: 'auto' }}>
+              {playlists.map((playlist) => (
+                <ListItemButton
+                  key={playlist.id}
+                  selected={selectedPlaylist?.id === playlist.id}
+                  onClick={() => setSelectedPlaylist(playlist)}
+                  sx={{
+                    borderRadius: 1,
+                    mb: 0.5,
+                    '&.Mui-selected': {
+                      backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(168, 85, 247, 0.3)',
                       },
-                    }}
-                  >
-                    <ListItemIcon>
-                      <PlaylistIcon sx={{ color: '#1db954' }} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={playlist.name}
-                      secondary={`${playlist.songIds.length} songs`}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-            </Box>
-          )}
-        </Box>
-
-        <Box sx={{ flex: 1 }}>
-          {/* Content area - stats and songs will go here */}
-        </Box>
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <PlaylistIcon sx={{ color: '#a855f7' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={playlist.name}
+                    secondary={`${playlist.songIds.length} songs`}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+          </Box>
+        )}
       </Box>
 
       {/* Stats */}
@@ -358,12 +392,12 @@ export const SongListPage: React.FC = () => {
         <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
           <Chip 
             label={`${filteredSongs.length} songs`} 
-            sx={{ backgroundColor: '#1db954', color: 'white' }} 
+            sx={{ backgroundColor: '#a855f7', color: 'white' }} 
           />
           <Chip 
             label={`${downloadedSongs.size} downloaded`} 
             variant="outlined" 
-            sx={{ borderColor: '#1db954', color: '#1db954' }} 
+            sx={{ borderColor: '#a855f7', color: '#a855f7' }} 
           />
           <Chip 
             label={`${allSongs.filter(s => s.source === 'drive').length} from Drive`} 
@@ -387,10 +421,17 @@ export const SongListPage: React.FC = () => {
         </Alert>
       )}
 
+      {/* Download Error */}
+      {downloadError && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setDownloadError(null)}>
+          {downloadError}
+        </Alert>
+      )}
+
       {/* Loading State */}
       {isLoadingSongs && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress sx={{ color: '#1db954' }} />
+          <CircularProgress sx={{ color: '#a855f7' }} />
         </Box>
       )}
 
@@ -410,7 +451,7 @@ export const SongListPage: React.FC = () => {
               <ListItemButton onClick={() => handlePlayPause(song)}>
                 <ListItemIcon>
                   {currentSong?.id === song.id && isPlaying ? (
-                    <PauseIcon sx={{ color: '#1db954' }} />
+                    <PauseIcon sx={{ color: '#a855f7' }} />
                   ) : (
                     <PlayArrowIcon sx={{ color: '#b3b3b3' }} />
                   )}
@@ -424,7 +465,7 @@ export const SongListPage: React.FC = () => {
                       </Typography>
                       {getSourceIcon(song.source)}
                       {downloadedSongs.has(song.id) && (
-                        <CheckCircleIcon sx={{ color: '#1db954', fontSize: 16 }} />
+                        <CheckCircleIcon sx={{ color: '#a855f7', fontSize: 16 }} />
                       )}
                     </Box>
                   }
@@ -461,15 +502,37 @@ export const SongListPage: React.FC = () => {
                   e.stopPropagation();
                   handleDownload(song);
                 }}
-                disabled={downloadedSongs.has(song.id) || song.source === 'local'}
+                disabled={downloadedSongs.has(song.id) || song.source === 'local' || downloadingSongs.has(song.id)}
                 sx={{ 
-                  color: downloadedSongs.has(song.id) ? '#1db954' : '#b3b3b3',
+                  color: downloadedSongs.has(song.id) ? '#a855f7' : '#b3b3b3',
                   '&:hover': {
-                    color: '#1db954',
+                    color: '#a855f7',
                   },
                 }}
               >
-                {downloadedSongs.has(song.id) ? <CheckCircleIcon /> : <DownloadIcon />}
+                {downloadingSongs.has(song.id) ? (
+                  <CircularProgress
+                    size={20}
+                    variant="determinate"
+                    value={downloadingSongs.get(song.id) ?? 0}
+                    sx={{ color: '#a855f7' }}
+                  />
+                ) : downloadedSongs.has(song.id) ? (
+                  <CheckCircleIcon />
+                ) : (
+                  <DownloadIcon />
+                )}
+              </IconButton>
+
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSongMenuOpen(e, song);
+                }}
+                sx={{ color: '#b3b3b3', '&:hover': { color: 'white' } }}
+                title="More options"
+              >
+                <MoreIcon />
               </IconButton>
             </ListItem>
           ))}
@@ -484,8 +547,37 @@ export const SongListPage: React.FC = () => {
             No music found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Add local folders or connect your Google Drive to get started.
+            Connect your Google Drive folder or add local music to get started.
           </Typography>
+          <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              component={RouterLink}
+              to="/settings"
+              startIcon={<CloudIcon />}
+              sx={{ bgcolor: '#a855f7', '&:hover': { bgcolor: '#c084fc' } }}
+            >
+              Connect Google Drive
+            </Button>
+            {isLocalFolderSupported && (
+              <Button
+                variant="outlined"
+                onClick={handleAddLocalFolder}
+                startIcon={<ComputerIcon />}
+                sx={{
+                  borderColor: '#a855f7',
+                  color: '#a855f7',
+                  '&:hover': {
+                    borderColor: '#c084fc',
+                    color: '#c084fc',
+                    backgroundColor: 'rgba(168, 85, 247, 0.08)',
+                  },
+                }}
+              >
+                Add Local Folder
+              </Button>
+            )}
+          </Stack>
         </Box>
       )}
 
@@ -501,6 +593,44 @@ export const SongListPage: React.FC = () => {
           </Typography>
         </Box>
       )}
+
+      {/* Song context menu */}
+      <Menu
+        anchorEl={songMenuAnchor}
+        open={Boolean(songMenuAnchor)}
+        onClose={handleSongMenuClose}
+      >
+        <MenuItem
+          onClick={() => {
+            handleSongMenuClose();
+            handleOpenPlaylistDialog(menuSong ?? undefined);
+          }}
+        >
+          <PlaylistAddIcon sx={{ mr: 1, color: '#a855f7' }} />
+          Add to Playlist
+        </MenuItem>
+        {selectedPlaylist && menuSong && (
+          <MenuItem
+            onClick={() => {
+              handleRemoveFromPlaylist(menuSong.id);
+              handleSongMenuClose();
+            }}
+            sx={{ color: 'error.main' }}
+          >
+            <DeleteIcon sx={{ mr: 1 }} />
+            Remove from Playlist
+          </MenuItem>
+        )}
+      </Menu>
+
+      {/* Playlist management dialog */}
+      <PlaylistDialog
+        open={playlistDialogOpen}
+        onClose={() => setPlaylistDialogOpen(false)}
+        song={selectedSongForPlaylist || undefined}
+        playlists={playlists}
+        onPlaylistsChange={loadPlaylists}
+      />
     </Container>
   );
 };

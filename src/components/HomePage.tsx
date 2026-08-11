@@ -17,9 +17,11 @@ import {
   CloudOff as OfflineIcon,
   Google as GoogleIcon,
   Settings as SettingsIcon,
+  FolderOpen as FolderOpenIcon,
 } from '@mui/icons-material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { CredentialSetupDialog } from './CredentialSetupDialog';
+import { SetupWizard } from './SetupWizard';
 import { FolderSelectionDialog } from './FolderSelectionDialog';
 import { credentialStorageService } from '../services/credentialStorage';
 
@@ -49,7 +51,7 @@ const FeatureCard: React.FC<{
         p: 3,
       }}
     >
-      <Box sx={{ color: '#1db954', mb: 2 }}>{icon}</Box>
+      <Box sx={{ color: '#a855f7', mb: 2 }}>{icon}</Box>
       <Typography variant="h6" component="h3" gutterBottom>
         {title}
       </Typography>
@@ -61,8 +63,9 @@ const FeatureCard: React.FC<{
 );
 
 export const HomePage: React.FC = () => {
-  const { isAuthenticated, isLoading, signIn, reinitialize, error } = useAuth();
-  const [setupDialogOpen, setSetupDialogOpen] = useState(false);
+  const { isAuthenticated, isLoading, signIn, error } = useAuth();
+  const navigate = useNavigate();
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [folderSelectionOpen, setFolderSelectionOpen] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string>('');
@@ -76,29 +79,28 @@ export const HomePage: React.FC = () => {
     const credentials = credentialStorageService.loadCredentials();
     setSelectedFolder(credentials?.folderId || '');
     
-    // Auto-open setup dialog if no credentials are stored (first time user)
+    // Auto-open the setup wizard if no credentials are stored (first time user)
     if (!hasStoredCredentials) {
       // Small delay to let the page render first
-      setTimeout(() => setSetupDialogOpen(true), 500);
+      setTimeout(() => setWizardOpen(true), 500);
     }
   }, []);
 
   // Show folder selection after successful sign in if no folder is selected
   useEffect(() => {
-    if (isAuthenticated && !selectedFolder && hasCredentials) {
+    if (isAuthenticated && !selectedFolder && hasCredentials && !wizardOpen) {
       setTimeout(() => setFolderSelectionOpen(true), 500);
     }
-  }, [isAuthenticated, selectedFolder, hasCredentials]);
+  }, [isAuthenticated, selectedFolder, hasCredentials, wizardOpen]);
 
-  const handleCredentialsSaved = async () => {
-    setSetupDialogOpen(false);
+  const handleWizardComplete = () => {
+    setWizardOpen(false);
     setHasCredentials(true);
-    // Reinitialize auth with new credentials
-    await reinitialize();
+    navigate('/songs');
   };
 
   const handleSetupCredentials = () => {
-    setSetupDialogOpen(true);
+    setWizardOpen(true);
   };
 
   const handleFolderSelected = (folderId: string, folderName: string) => {
@@ -116,7 +118,7 @@ export const HomePage: React.FC = () => {
           minHeight: '60vh',
         }}
       >
-        <CircularProgress size={60} sx={{ color: '#1db954' }} />
+        <CircularProgress size={60} sx={{ color: '#a855f7' }} />
       </Container>
     );
   }
@@ -134,21 +136,21 @@ export const HomePage: React.FC = () => {
               backgroundColor: '#2a2a2a', 
               padding: '2px 6px', 
               borderRadius: '4px',
-              color: '#1db954'
+              color: '#a855f7'
             }}>{window.location.origin}</code> is not authorized in your Google OAuth settings.
           </Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
             To fix this:
           </Typography>
           <Box component="ol" sx={{ pl: 3, mb: 2, fontSize: '0.875rem' }}>
-            <li>Go to <Link href="https://console.cloud.google.com/apis/credentials" target="_blank" sx={{ color: '#1db954' }}>Google Cloud Console Credentials</Link></li>
+            <li>Go to <Link href="https://console.cloud.google.com/apis/credentials" target="_blank" sx={{ color: '#a855f7' }}>Google Cloud Console Credentials</Link></li>
             <li>Click on your OAuth 2.0 Client ID</li>
             <li>Under "Authorized JavaScript origins", click <strong>+ ADD URI</strong></li>
             <li>Add this exact URL: <code style={{ 
               backgroundColor: '#2a2a2a', 
               padding: '2px 6px', 
               borderRadius: '4px',
-              color: '#1db954',
+              color: '#a855f7',
               fontWeight: 'bold'
             }}>{window.location.origin}</code></li>
             <li>Click <strong>Save</strong> and wait 5-10 minutes for changes to take effect</li>
@@ -158,7 +160,7 @@ export const HomePage: React.FC = () => {
               variant="outlined"
               size="small"
               onClick={handleSetupCredentials}
-              sx={{ borderColor: '#1db954', color: '#1db954' }}
+              sx={{ borderColor: '#a855f7', color: '#a855f7' }}
             >
               View Setup Instructions
             </Button>
@@ -166,7 +168,7 @@ export const HomePage: React.FC = () => {
               variant="contained"
               size="small"
               onClick={() => window.location.reload()}
-              sx={{ bgcolor: '#1db954', '&:hover': { bgcolor: '#1ed760' } }}
+              sx={{ bgcolor: '#a855f7', '&:hover': { bgcolor: '#c084fc' } }}
             >
               I've Added the Origin - Reload
             </Button>
@@ -188,7 +190,7 @@ export const HomePage: React.FC = () => {
           gutterBottom
           sx={{
             fontWeight: 'bold',
-            background: 'linear-gradient(45deg, #1db954, #1ed760)',
+            background: 'linear-gradient(45deg, #a855f7, #c084fc)',
             backgroundClip: 'text',
             textFillColor: 'transparent',
             WebkitBackgroundClip: 'text',
@@ -215,13 +217,13 @@ export const HomePage: React.FC = () => {
             onClick={handleSetupCredentials}
             startIcon={<SettingsIcon />}
             sx={{
-              bgcolor: '#1db954',
+              bgcolor: '#a855f7',
               color: 'white',
               px: 4,
               py: 1.5,
               fontSize: '1.1rem',
               '&:hover': {
-                bgcolor: '#1ed760',
+                bgcolor: '#c084fc',
               },
             }}
           >
@@ -234,13 +236,13 @@ export const HomePage: React.FC = () => {
             onClick={signIn}
             startIcon={<GoogleIcon />}
             sx={{
-              bgcolor: '#1db954',
+              bgcolor: '#a855f7',
               color: 'white',
               px: 4,
               py: 1.5,
               fontSize: '1.1rem',
               '&:hover': {
-                bgcolor: '#1ed760',
+                bgcolor: '#c084fc',
               },
             }}
           >
@@ -250,15 +252,16 @@ export const HomePage: React.FC = () => {
           <Button
             variant="contained"
             size="large"
-            href="/songs"
+            component={RouterLink}
+            to="/songs"
             sx={{
-              bgcolor: '#1db954',
+              bgcolor: '#a855f7',
               color: 'white',
               px: 4,
               py: 1.5,
               fontSize: '1.1rem',
               '&:hover': {
-                bgcolor: '#1ed760',
+                bgcolor: '#c084fc',
               },
             }}
           >
@@ -329,13 +332,13 @@ export const HomePage: React.FC = () => {
               onClick={handleSetupCredentials}
               startIcon={<SettingsIcon />}
               sx={{
-                borderColor: '#1db954',
-                color: '#1db954',
+                borderColor: '#a855f7',
+                color: '#a855f7',
                 px: 3,
                 '&:hover': {
-                  borderColor: '#1ed760',
-                  color: '#1ed760',
-                  backgroundColor: 'rgba(29, 185, 84, 0.08)',
+                  borderColor: '#c084fc',
+                  color: '#c084fc',
+                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
                 },
               }}
             >
@@ -348,13 +351,13 @@ export const HomePage: React.FC = () => {
               onClick={signIn}
               startIcon={<GoogleIcon />}
               sx={{
-                borderColor: '#1db954',
-                color: '#1db954',
+                borderColor: '#a855f7',
+                color: '#a855f7',
                 px: 3,
                 '&:hover': {
-                  borderColor: '#1ed760',
-                  color: '#1ed760',
-                  backgroundColor: 'rgba(29, 185, 84, 0.08)',
+                  borderColor: '#c084fc',
+                  color: '#c084fc',
+                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
                 },
               }}
             >
@@ -364,11 +367,11 @@ export const HomePage: React.FC = () => {
         </Box>
       )}
 
-      {/* Credential Setup Dialog */}
-      <CredentialSetupDialog
-        open={setupDialogOpen}
-        onClose={() => setSetupDialogOpen(false)}
-        onCredentialsSaved={handleCredentialsSaved}
+      {/* Setup Wizard */}
+      <SetupWizard
+        open={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onComplete={handleWizardComplete}
       />
 
       {/* Folder Selection Dialog */}
@@ -390,33 +393,51 @@ export const HomePage: React.FC = () => {
             mt: 6,
           }}
         >
-          <Typography variant="h5" component="h3" gutterBottom color="#1db954">
+          <Typography variant="h5" component="h3" gutterBottom color="#a855f7">
             Welcome Back!
           </Typography>
           <Typography variant="body1" color="text.secondary" paragraph>
             You're all set up. Visit your music library to start streaming and downloading songs.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3 }}>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3, flexWrap: 'wrap' }}>
             <Button
               variant="contained"
-              href="/songs"
+              component={RouterLink}
+              to="/songs"
               sx={{
-                bgcolor: '#1db954',
-                '&:hover': { bgcolor: '#1ed760' },
+                bgcolor: '#a855f7',
+                '&:hover': { bgcolor: '#c084fc' },
               }}
             >
               View Your Music
             </Button>
             <Button
               variant="outlined"
-              href="/settings"
+              onClick={() => setFolderSelectionOpen(true)}
+              startIcon={<FolderOpenIcon />}
               sx={{
-                borderColor: '#1db954',
-                color: '#1db954',
+                borderColor: '#a855f7',
+                color: '#a855f7',
                 '&:hover': {
-                  borderColor: '#1ed760',
-                  color: '#1ed760',
-                  backgroundColor: 'rgba(29, 185, 84, 0.08)',
+                  borderColor: '#c084fc',
+                  color: '#c084fc',
+                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
+                },
+              }}
+            >
+              Change Music Folder
+            </Button>
+            <Button
+              variant="outlined"
+              component={RouterLink}
+              to="/settings"
+              sx={{
+                borderColor: '#a855f7',
+                color: '#a855f7',
+                '&:hover': {
+                  borderColor: '#c084fc',
+                  color: '#c084fc',
+                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
                 },
               }}
             >

@@ -24,7 +24,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   VpnKey as VpnKeyIcon,
   FolderOpen as FolderIcon,
-  CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { credentialStorageService } from '../services/credentialStorage';
 import type {
@@ -55,12 +54,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
     isValid: true,
     errors: [],
   });
-  const [isValidating, setIsValidating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    success?: boolean;
-    error?: string;
-  } | null>(null);
 
   // Get current origin for authorized origins setup
   const currentOrigin =
@@ -84,30 +78,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
       if (validation.errors.length > 0) {
         setValidation({ isValid: true, errors: [] });
       }
-      setTestResult(null);
     };
-
-  const handleTestCredentials = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsValidating(true);
-    setTestResult(null);
-
-    try {
-      const result =
-        await credentialStorageService.testCredentials(credentials);
-      setTestResult(result);
-    } catch (error) {
-      setTestResult({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    } finally {
-      setIsValidating(false);
-    }
-  };
 
   const handleSave = async () => {
     if (!validateForm()) {
@@ -138,7 +109,6 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
       folderId: initialCredentials?.folderId || '',
     });
     setValidation({ isValid: true, errors: [] });
-    setTestResult(null);
     onClose();
   };
 
@@ -153,7 +123,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
       }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <VpnKeyIcon sx={{ color: '#1db954' }} />
+        <VpnKeyIcon sx={{ color: '#a855f7' }} />
         Google API Credentials Setup
       </DialogTitle>
 
@@ -178,18 +148,6 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
             </Alert>
           )}
 
-          {/* Test Result */}
-          {testResult && (
-            <Alert
-              severity={testResult.success ? 'success' : 'error'}
-              sx={{ mb: 2 }}
-            >
-              {testResult.success
-                ? 'Credentials appear to be valid!'
-                : `Validation failed: ${testResult.error}`}
-            </Alert>
-          )}
-
           {/* Form Fields */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField
@@ -199,68 +157,43 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
               placeholder="123456789-abcdef...xyz.apps.googleusercontent.com"
               fullWidth
               error={validation.errors.some(e => e.includes('Client ID'))}
-              helperText="Required: Your Google OAuth 2.0 Client ID"
+              helperText="It ends in .apps.googleusercontent.com"
               InputProps={{
                 sx: { backgroundColor: '#2a2a2a' },
               }}
             />
 
-            <TextField
-              label="Google API Key"
-              value={credentials.apiKey}
-              onChange={handleInputChange('apiKey')}
-              placeholder="AIza..."
-              fullWidth
-              error={validation.errors.some(e => e.includes('API Key'))}
-              helperText="Optional: API Key for enhanced functionality"
-              InputProps={{
-                sx: { backgroundColor: '#2a2a2a' },
-              }}
-            />
+            <Link
+              href="https://console.cloud.google.com/apis/credentials"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ color: '#a855f7', fontSize: '0.9em' }}
+            >
+              Don't have a Client ID? Get one from Google →
+            </Link>
 
             <TextField
-              label="Google Drive Folder ID"
+              label="Google Drive Folder ID (Optional)"
               value={credentials.folderId}
               onChange={handleInputChange('folderId')}
               placeholder="1a2b3c4d5e6f..."
               fullWidth
               error={validation.errors.some(e => e.includes('Folder ID'))}
-              helperText="Optional: Specific folder to scan for music (leave empty for root)"
+              helperText="Optional: specific folder to scan (leave empty to scan your whole Drive)"
               InputProps={{
                 sx: { backgroundColor: '#2a2a2a' },
               }}
             />
           </Box>
 
-          {/* Test Button */}
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-            <Button
-              variant="outlined"
-              onClick={handleTestCredentials}
-              disabled={isValidating || !credentials.clientId}
-              startIcon={
-                isValidating ? <CircularProgress size={16} /> : <CheckIcon />
-              }
-              sx={{
-                borderColor: '#1db954',
-                color: '#1db954',
-                '&:hover': {
-                  borderColor: '#1ed760',
-                  backgroundColor: 'rgba(29, 185, 84, 0.08)',
-                },
-              }}
-            >
-              {isValidating ? 'Testing...' : 'Test Credentials'}
-            </Button>
-          </Box>
         </Box>
 
         {/* Setup Instructions */}
         <Accordion sx={{ backgroundColor: '#2a2a2a', mt: 2 }}>
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon sx={{ color: '#1db954' }} />}
+            expandIcon={<ExpandMoreIcon sx={{ color: '#a855f7' }} />}
           >
-            <Typography sx={{ color: '#1db954' }}>
+            <Typography sx={{ color: '#a855f7' }}>
               📖 Setup Instructions
             </Typography>
           </AccordionSummary>
@@ -272,7 +205,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
             <List dense>
               <ListItem>
                 <ListItemIcon>
-                  <Chip label="1" size="small" sx={{ bgcolor: '#1db954' }} />
+                  <Chip label="1" size="small" sx={{ bgcolor: '#a855f7' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Create Google Cloud Project"
@@ -282,7 +215,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
                       <Link
                         href="https://console.cloud.google.com"
                         target="_blank"
-                        sx={{ color: '#1db954' }}
+                        sx={{ color: '#a855f7' }}
                       >
                         Google Cloud Console
                       </Link>{' '}
@@ -294,7 +227,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
 
               <ListItem>
                 <ListItemIcon>
-                  <Chip label="2" size="small" sx={{ bgcolor: '#1db954' }} />
+                  <Chip label="2" size="small" sx={{ bgcolor: '#a855f7' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Enable Google Drive API"
@@ -304,7 +237,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
 
               <ListItem>
                 <ListItemIcon>
-                  <Chip label="3" size="small" sx={{ bgcolor: '#1db954' }} />
+                  <Chip label="3" size="small" sx={{ bgcolor: '#a855f7' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Create OAuth 2.0 Credentials"
@@ -314,7 +247,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
 
               <ListItem>
                 <ListItemIcon>
-                  <Chip label="4" size="small" sx={{ bgcolor: '#1db954' }} />
+                  <Chip label="4" size="small" sx={{ bgcolor: '#a855f7' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Configure Authorized Origins"
@@ -336,8 +269,8 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
                           borderRadius: '4px',
                           fontFamily: 'monospace',
                           fontSize: '0.85em',
-                          color: '#1db954',
-                          border: '1px solid #1db954',
+                          color: '#a855f7',
+                          border: '1px solid #a855f7',
                           margin: '8px 0',
                         }}
                       >
@@ -358,7 +291,7 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
 
               <ListItem>
                 <ListItemIcon>
-                  <FolderIcon sx={{ color: '#1db954' }} />
+                  <FolderIcon sx={{ color: '#a855f7' }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Optional: Get Folder ID"
@@ -379,8 +312,8 @@ export const CredentialSetupDialog: React.FC<CredentialSetupDialogProps> = ({
           variant="contained"
           disabled={!credentials.clientId || isSaving}
           sx={{
-            bgcolor: '#1db954',
-            '&:hover': { bgcolor: '#1ed760' },
+            bgcolor: '#a855f7',
+            '&:hover': { bgcolor: '#c084fc' },
           }}
         >
           {isSaving ? <CircularProgress size={20} /> : 'Save Credentials'}

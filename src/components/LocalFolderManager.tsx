@@ -67,10 +67,10 @@ export const LocalFolderManager: React.FC = () => {
     setRemoveDialogOpen(true);
   };
 
-  const confirmRemoveFolder = () => {
+  const confirmRemoveFolder = async () => {
     if (folderToRemove) {
       try {
-        removeLocalFolder(folderToRemove.id);
+        await removeLocalFolder(folderToRemove.id);
         setRemoveDialogOpen(false);
         setFolderToRemove(null);
       } catch (err) {
@@ -103,7 +103,7 @@ export const LocalFolderManager: React.FC = () => {
       <Card sx={{ backgroundColor: '#181818' }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ComputerIcon sx={{ color: '#1db954' }} />
+            <ComputerIcon sx={{ color: '#a855f7' }} />
             Local Music Folders
           </Typography>
 
@@ -128,7 +128,7 @@ export const LocalFolderManager: React.FC = () => {
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ComputerIcon sx={{ color: '#1db954' }} />
+            <ComputerIcon sx={{ color: '#a855f7' }} />
             Local Music Folders
           </Typography>
           
@@ -137,7 +137,7 @@ export const LocalFolderManager: React.FC = () => {
             startIcon={<AddIcon />}
             onClick={handleAddFolder}
             disabled={isAdding || isLoadingFolders}
-            sx={{ bgcolor: '#1db954', '&:hover': { bgcolor: '#1ed760' } }}
+            sx={{ bgcolor: '#a855f7', '&:hover': { bgcolor: '#c084fc' } }}
           >
             {isAdding ? 'Adding...' : 'Add Folder'}
           </Button>
@@ -177,7 +177,7 @@ export const LocalFolderManager: React.FC = () => {
                 }}
               >
                 <ListItemIcon>
-                  <FolderIcon sx={{ color: '#1db954' }} />
+                  <FolderIcon sx={{ color: '#a855f7' }} />
                 </ListItemIcon>
                 
                 <ListItemText
@@ -190,7 +190,7 @@ export const LocalFolderManager: React.FC = () => {
                         label={`${folder.songCount} songs`}
                         size="small"
                         icon={<MusicIcon />}
-                        sx={{ bgcolor: '#1db954', color: 'white' }}
+                        sx={{ bgcolor: '#a855f7', color: 'white' }}
                       />
                     </Box>
                   }
@@ -206,7 +206,7 @@ export const LocalFolderManager: React.FC = () => {
                     size="small"
                     onClick={() => handleRescanFolder(folder.id)}
                     disabled={isLoadingFolders}
-                    sx={{ color: '#1db954' }}
+                    sx={{ color: '#a855f7' }}
                     title="Rescan folder"
                   >
                     <RefreshIcon />

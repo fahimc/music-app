@@ -14,9 +14,10 @@ class GoogleDriveService {
   ];
 
   /**
-   * List all files and folders from Google Drive (for folder selection)
+   * List folders from Google Drive for the folder browser.
+   * Pass 'root' (default) for top-level folders, or a folder ID to list its children.
    */
-  async listFiles(folderId?: string, pageToken?: string): Promise<DriveResponse> {
+  async listFiles(folderId: string = 'root', pageToken?: string): Promise<DriveResponse> {
     const accessToken = googleAuthService.getAccessToken();
     if (!accessToken) {
       throw new Error('No access token available');
@@ -36,7 +37,6 @@ class GoogleDriveService {
     if (folderId) {
       query += ` and '${folderId}' in parents`;
     }
-    // Don't restrict to root only - show all folders
 
     const params = new URLSearchParams({
       q: query,
@@ -175,7 +175,10 @@ class GoogleDriveService {
   }
 
   /**
-   * Download a song file from Google Drive
+   * Download a song file from Google Drive using the authenticated media endpoint.
+   * Using the media endpoint (files/{id}?alt=media) with the Bearer token ensures
+   * private files download correctly, unlike webContentLink which drops auth headers
+   * on cross-origin redirects.
    */
   async downloadSong(song: Song, onProgress?: (progress: number) => void): Promise<Blob> {
     const accessToken = googleAuthService.getAccessToken();
@@ -183,11 +186,11 @@ class GoogleDriveService {
       throw new Error('No access token available');
     }
 
-    if (!song.downloadUrl) {
-      throw new Error('No download URL available for this song');
+    if (!song.id) {
+      throw new Error('No file ID available for this song');
     }
 
-    const response = await fetch(song.downloadUrl, {
+    const response = await fetch(`${this.BASE_URL}/files/${encodeURIComponent(song.id)}?alt=media`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
@@ -200,7 +203,7 @@ class GoogleDriveService {
     const contentLength = response.headers.get('Content-Length');
     const total = contentLength ? parseInt(contentLength, 10) : song.size;
 
-    if (!onProgress) {
+    if (!onProgress || !total || isNaN(total)) {
       return await response.blob();
     }
 

@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Song, AudioPlayerState } from '../types';
 import { offlineStorageService } from '../services/offlineStorage';
+import { googleDriveService } from '../services/googleDrive';
 
 export const useAudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Track blob URLs created for Drive streaming so they can be cleaned up
+  const streamUrlRef = useRef<string | null>(null);
   const [playerState, setPlayerState] = useState<AudioPlayerState>({
     currentSong: null,
     isPlaying: false,
@@ -79,6 +82,10 @@ export const useAudioPlayer = () => {
       audio.removeEventListener('error', handleError);
       audio.pause();
       audio.src = '';
+      if (streamUrlRef.current) {
+        URL.revokeObjectURL(streamUrlRef.current);
+        streamUrlRef.current = null;
+      }
     };
   }, []);
 
@@ -107,12 +114,23 @@ export const useAudioPlayer = () => {
           throw new Error('Failed to create offline audio URL');
         }
         audioUrl = offlineUrl;
+      } else if (song.downloadUrl && song.downloadUrl.startsWith('blob:')) {
+        // Local file object URL - play directly
+        audioUrl = song.downloadUrl;
       } else {
-        // Stream from Google Drive
+        // Stream from Google Drive: fetch the content with the auth token and
+        // play from a blob URL. webContentLink can't be used directly because
+        // the <audio> element can't attach the Authorization header, so private
+        // files would fail with 403.
         if (!song.downloadUrl) {
           throw new Error('No download URL available for streaming');
         }
-        audioUrl = song.downloadUrl;
+        const blob = await googleDriveService.downloadSong(song);
+        if (streamUrlRef.current) {
+          URL.revokeObjectURL(streamUrlRef.current);
+        }
+        streamUrlRef.current = URL.createObjectURL(blob);
+        audioUrl = streamUrlRef.current;
       }
 
       audio.src = audioUrl;

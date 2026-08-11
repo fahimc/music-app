@@ -50,7 +50,7 @@ export const NavBar: React.FC = () => {
           sx={{
             flexGrow: 0,
             textDecoration: 'none',
-            color: '#1db954',
+            color: '#a855f7',
             fontWeight: 'bold',
             mr: 4,
           }}
@@ -66,13 +66,16 @@ export const NavBar: React.FC = () => {
             to="/"
             startIcon={<HomeIcon />}
             sx={{
-              color: isActive('/') ? '#1db954' : '#b3b3b3',
+              color: isActive('/') ? '#a855f7' : '#b3b3b3',
               '&:hover': {
-                color: '#1db954',
+                color: '#a855f7',
               },
+              minWidth: 0,
             }}
           >
-            Home
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+              Home
+            </Box>
           </Button>
 
           {isAuthenticated && (
@@ -83,13 +86,16 @@ export const NavBar: React.FC = () => {
                 to="/songs"
                 startIcon={<LibraryMusicIcon />}
                 sx={{
-                  color: isActive('/songs') ? '#1db954' : '#b3b3b3',
+                  color: isActive('/songs') ? '#a855f7' : '#b3b3b3',
                   '&:hover': {
-                    color: '#1db954',
+                    color: '#a855f7',
                   },
+                  minWidth: 0,
                 }}
               >
-                Your Music
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Your Music
+                </Box>
               </Button>
 
               <Button
@@ -98,13 +104,16 @@ export const NavBar: React.FC = () => {
                 to="/settings"
                 startIcon={<SettingsIcon />}
                 sx={{
-                  color: isActive('/settings') ? '#1db954' : '#b3b3b3',
+                  color: isActive('/settings') ? '#a855f7' : '#b3b3b3',
                   '&:hover': {
-                    color: '#1db954',
+                    color: '#a855f7',
                   },
+                  minWidth: 0,
                 }}
               >
-                Settings
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Settings
+                </Box>
               </Button>
             </>
           )}
@@ -113,7 +122,10 @@ export const NavBar: React.FC = () => {
         {/* User Profile / Auth */}
         {isAuthenticated && user ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ color: '#b3b3b3' }}>
+            <Typography
+              variant="body2"
+              sx={{ color: '#b3b3b3', display: { xs: 'none', md: 'block' } }}
+            >
               {user.name}
             </Typography>
             <IconButton onClick={handleUserMenuClick} size="small">
@@ -146,11 +158,11 @@ export const NavBar: React.FC = () => {
             onClick={signIn}
             disabled={Boolean(error)}
             sx={{
-              color: error ? '#666' : '#1db954',
-              borderColor: error ? '#666' : '#1db954',
+              color: error ? '#666' : '#a855f7',
+              borderColor: error ? '#666' : '#a855f7',
               '&:hover': !error ? {
-                borderColor: '#1ed760',
-                backgroundColor: 'rgba(29, 185, 84, 0.08)',
+                borderColor: '#c084fc',
+                backgroundColor: 'rgba(168, 85, 247, 0.08)',
               } : {},
               '&:disabled': {
                 borderColor: '#666',
@@ -158,7 +170,18 @@ export const NavBar: React.FC = () => {
               }
             }}
           >
-            {error ? 'OAuth Not Configured' : 'Sign In with Google'}
+            {error ? (
+              'OAuth Not Configured'
+            ) : (
+              <>
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Sign In with Google
+                </Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                  Sign In
+                </Box>
+              </>
+            )}
           </Button>
         )}
       </Toolbar>

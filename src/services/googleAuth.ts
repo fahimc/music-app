@@ -13,6 +13,7 @@ interface TokenResponse {
   expires_in: number;
   scope: string;
   token_type: string;
+  error?: string;
 }
 
 class GoogleAuthService {
@@ -23,7 +24,6 @@ class GoogleAuthService {
   private tokenExpiry: number = 0;
   
   // Storage keys
-  private readonly AUTH_STATE_KEY = 'music_app_auth_state';
   private readonly USER_KEY = 'music_app_user';
   private readonly TOKEN_KEY = 'music_app_token';
   private readonly TOKEN_EXPIRY_KEY = 'music_app_token_expiry';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -155,7 +155,7 @@ export const PlaylistDialog: React.FC<PlaylistDialogProps> = ({
                           disabled={isInPlaylist}
                         >
                           <ListItemIcon>
-                            <PlaylistIcon sx={{ color: '#1db954' }} />
+                            <PlaylistIcon sx={{ color: '#a855f7' }} />
                           </ListItemIcon>
                           <ListItemText
                             primary={playlist.name}
@@ -167,7 +167,7 @@ export const PlaylistDialog: React.FC<PlaylistDialogProps> = ({
                                 <Chip
                                   label={`${playlist.songIds.length} songs`}
                                   size="small"
-                                  sx={{ bgcolor: 'rgba(29, 185, 84, 0.2)' }}
+                                  sx={{ bgcolor: 'rgba(168, 85, 247, 0.2)' }}
                                 />
                                 {isInPlaylist && (
                                   <Chip label="Added" size="small" color="success" />
@@ -189,11 +189,11 @@ export const PlaylistDialog: React.FC<PlaylistDialogProps> = ({
                 onClick={() => setShowCreateForm(true)}
                 sx={{
                   mt: 2,
-                  borderColor: '#1db954',
-                  color: '#1db954',
+                  borderColor: '#a855f7',
+                  color: '#a855f7',
                   '&:hover': {
-                    borderColor: '#1ed760',
-                    backgroundColor: 'rgba(29, 185, 84, 0.08)',
+                    borderColor: '#c084fc',
+                    backgroundColor: 'rgba(168, 85, 247, 0.08)',
                   },
                 }}
               >
@@ -235,8 +235,8 @@ export const PlaylistDialog: React.FC<PlaylistDialogProps> = ({
                   onClick={editingPlaylist ? handleUpdatePlaylist : handleCreatePlaylist}
                   disabled={!newPlaylistName.trim()}
                   sx={{
-                    bgcolor: '#1db954',
-                    '&:hover': { bgcolor: '#1ed760' },
+                    bgcolor: '#a855f7',
+                    '&:hover': { bgcolor: '#c084fc' },
                   }}
                 >
                   {editingPlaylist ? 'Update' : 'Create'}

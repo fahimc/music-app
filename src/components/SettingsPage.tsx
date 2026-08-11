@@ -114,7 +114,7 @@ export const SettingsPage: React.FC = () => {
       <Card sx={{ mb: 3, backgroundColor: '#181818' }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VpnKeyIcon sx={{ color: '#1db954' }} />
+            <VpnKeyIcon sx={{ color: '#a855f7' }} />
             Google API Credentials
           </Typography>
 
@@ -137,18 +137,6 @@ export const SettingsPage: React.FC = () => {
                   />
                 </ListItem>
                 
-                {credentials.apiKey && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <VpnKeyIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="API Key"
-                      secondary="Configured"
-                    />
-                  </ListItem>
-                )}
-                
                 {credentials.folderId && (
                   <ListItem>
                     <ListItemIcon>
@@ -167,7 +155,7 @@ export const SettingsPage: React.FC = () => {
                   variant="outlined"
                   startIcon={<EditIcon />}
                   onClick={() => setSetupDialogOpen(true)}
-                  sx={{ borderColor: '#1db954', color: '#1db954' }}
+                  sx={{ borderColor: '#a855f7', color: '#a855f7' }}
                 >
                   Edit Credentials
                 </Button>
@@ -194,7 +182,7 @@ export const SettingsPage: React.FC = () => {
                 variant="contained"
                 startIcon={<VpnKeyIcon />}
                 onClick={() => setSetupDialogOpen(true)}
-                sx={{ bgcolor: '#1db954', '&:hover': { bgcolor: '#1ed760' } }}
+                sx={{ bgcolor: '#a855f7', '&:hover': { bgcolor: '#c084fc' } }}
               >
                 Configure Credentials
               </Button>
@@ -208,7 +196,7 @@ export const SettingsPage: React.FC = () => {
         <Card sx={{ mb: 3, backgroundColor: '#181818' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <FolderIcon sx={{ color: '#1db954' }} />
+              <FolderIcon sx={{ color: '#a855f7' }} />
               Google Drive Music Folder
             </Typography>
 
@@ -228,11 +216,11 @@ export const SettingsPage: React.FC = () => {
                 <List dense>
                   <ListItem>
                     <ListItemIcon>
-                      <FolderIcon sx={{ color: '#1db954' }} />
+                      <FolderIcon sx={{ color: '#a855f7' }} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Selected Folder"
-                      secondary={credentials.folderId === '' ? 'My Drive (Root)' : credentials.folderId}
+                      secondary={credentials.folderId === '' ? 'My Drive (Root)' : credentials.folderName || credentials.folderId}
                     />
                   </ListItem>
                 </List>
@@ -241,7 +229,7 @@ export const SettingsPage: React.FC = () => {
                   variant="outlined"
                   startIcon={<EditIcon />}
                   onClick={() => setFolderSelectionOpen(true)}
-                  sx={{ borderColor: '#1db954', color: '#1db954' }}
+                  sx={{ borderColor: '#a855f7', color: '#a855f7' }}
                 >
                   Change Folder
                 </Button>
@@ -258,7 +246,7 @@ export const SettingsPage: React.FC = () => {
                   variant="contained"
                   startIcon={<FolderIcon />}
                   onClick={() => setFolderSelectionOpen(true)}
-                  sx={{ bgcolor: '#1db954', '&:hover': { bgcolor: '#1ed760' } }}
+                  sx={{ bgcolor: '#a855f7', '&:hover': { bgcolor: '#c084fc' } }}
                 >
                   Select Music Folder
                 </Button>
@@ -287,7 +275,7 @@ export const SettingsPage: React.FC = () => {
         <Card sx={{ mb: 3, backgroundColor: '#181818' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CloudIcon sx={{ color: '#1db954' }} />
+              <CloudIcon sx={{ color: '#a855f7' }} />
               Google Account
             </Typography>
 
@@ -325,10 +313,10 @@ export const SettingsPage: React.FC = () => {
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <StorageIcon sx={{ color: '#1db954' }} />
+              <StorageIcon sx={{ color: '#a855f7' }} />
               Offline Storage
             </Typography>
-            <IconButton onClick={loadStorageStats} sx={{ color: '#1db954' }}>
+            <IconButton onClick={loadStorageStats} sx={{ color: '#a855f7' }}>
               <RefreshIcon />
             </IconButton>
           </Box>
@@ -338,12 +326,12 @@ export const SettingsPage: React.FC = () => {
               <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Chip 
                   label={`${storageStats.totalSongs} songs`} 
-                  sx={{ bgcolor: '#1db954', color: 'white' }} 
+                  sx={{ bgcolor: '#a855f7', color: 'white' }} 
                 />
                 <Chip 
                   label={formatFileSize(storageStats.totalSize)} 
                   variant="outlined"
-                  sx={{ borderColor: '#1db954', color: '#1db954' }} 
+                  sx={{ borderColor: '#a855f7', color: '#a855f7' }} 
                 />
               </Stack>
 
@@ -382,7 +370,7 @@ export const SettingsPage: React.FC = () => {
       <Card sx={{ backgroundColor: '#181818' }}>
         <CardContent>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoIcon sx={{ color: '#1db954' }} />
+            <InfoIcon sx={{ color: '#a855f7' }} />
             App Information
           </Typography>
 

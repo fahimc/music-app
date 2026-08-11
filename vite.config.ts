@@ -8,26 +8,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['vite.svg'],
       manifest: {
         name: 'Music App - Spotify Clone',
         short_name: 'MusicApp',
         description: 'A Spotify-like music streaming app with Google Drive integration',
-        theme_color: '#1db954',
-        background_color: '#191414',
-        display: 'standalone',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+        theme_color: '#a855f7',
+        background_color: '#121212',
+        display: 'standalone'
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
