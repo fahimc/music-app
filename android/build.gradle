@@ -22,6 +22,16 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // @capgo/capacitor-social-login declares androidx.browser:browser:1.9.0
+    // (its Apple provider branch) while com.google.androidbrowserhelper:2.5.0
+    // pulls androidx.browser:browser:1.4.0. Gradle's consistent resolution
+    // cannot satisfy both, so force the newer version everywhere.
+    configurations.configureEach {
+        resolutionStrategy {
+            force 'androidx.browser:browser:1.9.0'
+        }
+    }
 }
 
 task clean(type: Delete) {
