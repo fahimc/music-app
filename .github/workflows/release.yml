@@ -33,6 +33,10 @@ jobs:
 
       - name: Build web bundle
         run: npm run build
+        env:
+          # Central-mode Client ID. Set this secret in the repo settings;
+          # the APK ships with this ID baked in so users just sign in.
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
 
       - name: Sync web assets to Android
         run: npx cap sync android

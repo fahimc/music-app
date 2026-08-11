@@ -148,12 +148,17 @@ export const AudioPlayer: React.FC = () => {
               onClick={togglePlayPause}
               disabled={isLoading}
               sx={{
-                backgroundColor: '#a855f7',
-                color: 'black',
-                '&:hover': { backgroundColor: '#c084fc' },
-                '&:disabled': { backgroundColor: '#666', color: '#999' },
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                '&:hover': {
+                  backgroundColor: '#f0f0f0',
+                  transform: 'scale(1.04)',
+                },
+                '&:disabled': { backgroundColor: '#535353', color: '#999' },
                 width: 48,
                 height: 48,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                transition: 'transform 0.1s ease, background-color 0.1s ease',
               }}
             >
               {isLoading ? (
@@ -162,7 +167,7 @@ export const AudioPlayer: React.FC = () => {
                     width: 24,
                     height: 24,
                     border: '2px solid #999',
-                    borderTop: '2px solid black',
+                    borderTop: '2px solid #000',
                     borderRadius: '50%',
                     animation: 'spin 1s linear infinite',
                   }}

@@ -35,6 +35,7 @@ import {
   PlaylistPlay as PlaylistIcon,
   MoreVert as MoreIcon,
   Delete as DeleteIcon,
+  GraphicEq as GraphicEqIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -256,13 +257,6 @@ export const SongListPage: React.FC = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const formatFileSize = (bytes: number): string => {
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    if (bytes === 0) return '0 B';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
   if (!isAuthenticated) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -437,105 +431,168 @@ export const SongListPage: React.FC = () => {
 
       {/* Songs List */}
       {!isLoadingSongs && filteredSongs.length > 0 && (
-        <List sx={{ bgcolor: '#181818', borderRadius: 2 }}>
-          {filteredSongs.map((song, index) => (
-            <ListItem 
-              key={song.id} 
-              divider={index < filteredSongs.length - 1}
-              sx={{ 
-                '&:hover': { 
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)' 
-                } 
-              }}
-            >
-              <ListItemButton onClick={() => handlePlayPause(song)}>
-                <ListItemIcon>
-                  {currentSong?.id === song.id && isPlaying ? (
-                    <PauseIcon sx={{ color: '#a855f7' }} />
-                  ) : (
-                    <PlayArrowIcon sx={{ color: '#b3b3b3' }} />
-                  )}
-                </ListItemIcon>
-                
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body1" sx={{ color: 'white' }}>
-                        {song.name}
-                      </Typography>
-                      {getSourceIcon(song.source)}
-                      {downloadedSongs.has(song.id) && (
-                        <CheckCircleIcon sx={{ color: '#a855f7', fontSize: 16 }} />
-                      )}
-                    </Box>
-                  }
-                  secondary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
-                      <Typography variant="body2" sx={{ color: '#b3b3b3' }}>
+        <List
+          disablePadding
+          sx={{ bgcolor: '#181818', borderRadius: 1, px: 0.5, py: 0.5 }}
+        >
+          {filteredSongs.map((song, index) => {
+            const isCurrent = currentSong?.id === song.id;
+            const isDownloaded = downloadedSongs.has(song.id);
+            const isDownloading = downloadingSongs.has(song.id);
+            return (
+              <ListItem
+                key={song.id}
+                disablePadding
+                sx={{
+                  borderRadius: 1,
+                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.06)' },
+                  '&:hover .row-index': { display: 'none' },
+                  '&:hover .row-play': { display: 'flex' },
+                  '&:hover .row-actions': { opacity: 1 },
+                }}
+              >
+                <ListItemButton
+                  onClick={() => handlePlayPause(song)}
+                  sx={{ borderRadius: 1, py: 0.5, flex: 1 }}
+                >
+                  <Box sx={{ width: 36, flexShrink: 0, textAlign: 'center' }}>
+                    {isCurrent ? (
+                      <Box
+                        sx={{
+                          color: '#a855f7',
+                          display: 'flex',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {isPlaying ? (
+                          <GraphicEqIcon />
+                        ) : (
+                          <PauseIcon sx={{ fontSize: 20 }} />
+                        )}
+                      </Box>
+                    ) : (
+                      <>
+                        <Typography
+                          variant="body2"
+                          className="row-index"
+                          sx={{ color: '#b3b3b3' }}
+                        >
+                          {index + 1}
+                        </Typography>
+                        <Box
+                          className="row-play"
+                          sx={{
+                            display: 'none',
+                            color: 'white',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <PlayArrowIcon sx={{ fontSize: 20 }} />
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: isCurrent ? '#c084fc' : 'white',
+                            fontWeight: isCurrent ? 700 : 400,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {song.name}
+                        </Typography>
+                        {getSourceIcon(song.source)}
+                        {isDownloaded && (
+                          <CheckCircleIcon sx={{ color: '#a855f7', fontSize: 16 }} />
+                        )}
+                      </Box>
+                    }
+                    secondary={
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: '#b3b3b3',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {song.artist || 'Unknown Artist'}
+                        {song.album ? ` • ${song.album}` : ''}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#666' }}>
-                        •
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#b3b3b3' }}>
-                        {formatFileSize(song.size)}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#666' }}>
-                        •
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#b3b3b3' }}>
-                        {formatDuration(song.duration)}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#666' }}>
-                        •
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#b3b3b3' }}>
-                        {song.source === 'drive' ? 'Google Drive' : 'Local'}
-                      </Typography>
-                    </Box>
-                  }
-                />
-              </ListItemButton>
-
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload(song);
-                }}
-                disabled={downloadedSongs.has(song.id) || song.source === 'local' || downloadingSongs.has(song.id)}
-                sx={{ 
-                  color: downloadedSongs.has(song.id) ? '#a855f7' : '#b3b3b3',
-                  '&:hover': {
-                    color: '#a855f7',
-                  },
-                }}
-              >
-                {downloadingSongs.has(song.id) ? (
-                  <CircularProgress
-                    size={20}
-                    variant="determinate"
-                    value={downloadingSongs.get(song.id) ?? 0}
-                    sx={{ color: '#a855f7' }}
+                    }
                   />
-                ) : downloadedSongs.has(song.id) ? (
-                  <CheckCircleIcon />
-                ) : (
-                  <DownloadIcon />
-                )}
-              </IconButton>
+                </ListItemButton>
 
-              <IconButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSongMenuOpen(e, song);
-                }}
-                sx={{ color: '#b3b3b3', '&:hover': { color: 'white' } }}
-                title="More options"
-              >
-                <MoreIcon />
-              </IconButton>
-            </ListItem>
-          ))}
+                <Box
+                  className="row-actions"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    opacity: isDownloaded || isDownloading ? 1 : 0,
+                    transition: 'opacity 0.15s ease',
+                    pr: 0.5,
+                  }}
+                >
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(song);
+                    }}
+                    disabled={isDownloaded || song.source === 'local' || isDownloading}
+                    sx={{
+                      color: isDownloaded ? '#a855f7' : '#b3b3b3',
+                      '&:hover': { color: '#a855f7' },
+                    }}
+                  >
+                    {isDownloading ? (
+                      <CircularProgress
+                        size={20}
+                        variant="determinate"
+                        value={downloadingSongs.get(song.id) ?? 0}
+                        sx={{ color: '#a855f7' }}
+                      />
+                    ) : isDownloaded ? (
+                      <CheckCircleIcon fontSize="small" />
+                    ) : (
+                      <DownloadIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSongMenuOpen(e, song);
+                    }}
+                    sx={{ color: '#b3b3b3', '&:hover': { color: 'white' } }}
+                    title="More options"
+                  >
+                    <MoreIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: '#b3b3b3',
+                    pr: 1.5,
+                    width: 56,
+                    textAlign: 'right',
+                    flexShrink: 0,
+                  }}
+                >
+                  {formatDuration(song.duration)}
+                </Typography>
+              </ListItem>
+            );
+          })}
         </List>
       )}
 

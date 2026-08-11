@@ -1,5 +1,7 @@
 import type { GoogleUser } from '../types';
 import { credentialStorageService } from './credentialStorage';
+import { Capacitor } from '@capacitor/core';
+import { SocialLogin } from '@capgo/capacitor-social-login';
 
 declare global {
   interface Window {
@@ -93,6 +95,10 @@ class GoogleAuthService {
   private validateConfig(): boolean {
     const clientId = this.getClientId();
     return Boolean(clientId && clientId !== '');
+  }
+
+  private isNativePlatform(): boolean {
+    return Capacitor.isNativePlatform();
   }
 
   private isGoogleApiLoaded(): boolean {
@@ -209,6 +215,18 @@ class GoogleAuthService {
     }
 
     try {
+      // On native platforms (Android APK), use the native Google Sign-In SDK.
+      if (this.isNativePlatform()) {
+        await SocialLogin.initialize({
+          google: {
+            webClientId: this.getClientId(),
+          },
+        });
+        this.isInitialized = true;
+        console.log('Native Google Sign-In initialized successfully');
+        return;
+      }
+
       await this.loadGoogleIdentityServices();
       
       return new Promise((resolve, reject) => {
@@ -226,6 +244,11 @@ class GoogleAuthService {
   async signIn(): Promise<void> {
     if (!this.isInitialized) {
       throw new Error('Google Auth not initialized. Please configure your credentials first.');
+    }
+
+    // On native platforms, use the native Google Sign-In SDK
+    if (this.isNativePlatform()) {
+      return this.nativeSignIn();
     }
 
     if (!this.tokenClient) {
@@ -286,14 +309,61 @@ class GoogleAuthService {
     }
   }
 
+  private async nativeSignIn(): Promise<void> {
+    console.log('Starting native Google sign in...');
+
+    try {
+      const res = await SocialLogin.login({
+        provider: 'google',
+        options: {
+          scopes: [this.SCOPES],
+        },
+      });
+
+      if (res.provider !== 'google' || !res.result || res.result.responseType !== 'online') {
+        throw new Error('Unexpected response from Google Sign-In');
+      }
+
+      const result = res.result;
+      if (!result.accessToken?.token) {
+        throw new Error('No access token returned from Google Sign-In');
+      }
+
+      this.accessToken = result.accessToken.token;
+      // The native SDK doesn't report expiry; Google access tokens last ~1 hour
+      this.tokenExpiry = Date.now() + 3600 * 1000;
+
+      // Prefer the profile from the native result, fall back to the userinfo fetch
+      const profile = result.profile;
+      if (profile && (profile.email || profile.name)) {
+        this.currentUser = {
+          id: profile.id || '',
+          name: profile.name || '',
+          email: profile.email || '',
+          picture: profile.imageUrl || '',
+        };
+      } else {
+        await this.loadUserInfo();
+      }
+
+      this.persistAuthState();
+      console.log('Native Google sign in successful');
+    } catch (error) {
+      console.error('Native sign in error:', error);
+      throw error;
+    }
+  }
+
   async signOut(): Promise<void> {
     if (!this.isInitialized) {
       throw new Error('Google Auth not initialized');
     }
 
     try {
-      // Revoke the token
-      if (this.accessToken) {
+      if (this.isNativePlatform()) {
+        await SocialLogin.logout({ provider: 'google' });
+      } else if (this.accessToken) {
+        // Revoke the token
         window.google.accounts.oauth2.revoke(this.accessToken, () => {
           console.log('Token revoked');
         });
@@ -326,6 +396,26 @@ class GoogleAuthService {
   async refreshToken(): Promise<void> {
     if (!this.isSignedIn()) {
       throw new Error('User not signed in');
+    }
+
+    // On native, the plugin's refresh() is not implemented on Android.
+    // First try getAuthorizationCode, which returns the OS-cached token
+    // silently if it's still valid; otherwise fall back to a fresh sign-in.
+    if (this.isNativePlatform()) {
+      try {
+        const authCode = await SocialLogin.getAuthorizationCode({ provider: 'google' });
+        if (authCode?.accessToken) {
+          this.accessToken = authCode.accessToken;
+          this.tokenExpiry = Date.now() + 3600 * 1000;
+          this.persistAuthState();
+          console.log('Native token refreshed from cache');
+          return;
+        }
+      } catch (error) {
+        console.error('Native token cache invalid, re-signing in:', error);
+      }
+      await this.nativeSignIn();
+      return;
     }
 
     if (!this.tokenClient) {

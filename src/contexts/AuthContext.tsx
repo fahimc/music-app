@@ -30,13 +30,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Initialize Google API and check for existing auth
     const initAuth = async () => {
       try {
-        // First try to import credentials from environment if available
-        if (!credentialStorageService.hasCredentials()) {
-          credentialStorageService.importFromEnvironment();
-        }
-
-        // Check if we have credentials before trying to initialize
-        if (!credentialStorageService.hasCredentials()) {
+        // A Client ID is available either from a user override (stored) or
+        // from the app's built-in credentials (VITE_GOOGLE_CLIENT_ID).
+        if (!credentialStorageService.isConfigured()) {
           // No credentials available - set to not authenticated without error
           setAuthState({
             isAuthenticated: false,

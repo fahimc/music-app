@@ -1,7 +1,5 @@
 import React from 'react';
 import {
-  AppBar,
-  Toolbar,
   Typography,
   Button,
   Box,
@@ -9,12 +7,16 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  ListItemButton,
+  ListItemIcon,
 } from '@mui/material';
 import {
   Home as HomeIcon,
   LibraryMusic as LibraryMusicIcon,
   Settings as SettingsIcon,
   AccountCircle as AccountCircleIcon,
+  MusicNote as MusicNoteIcon,
+  Google as GoogleIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,102 +41,135 @@ export const NavBar: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const navItem = (to: string, icon: React.ReactNode, label: string) => (
+    <ListItemButton
+      component={Link}
+      to={to}
+      selected={isActive(to)}
+      sx={{
+        borderRadius: 1,
+        px: 1.5,
+        py: 1,
+        color: isActive(to) ? '#ffffff' : '#b3b3b3',
+        '&:hover': {
+          color: '#ffffff',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        },
+        '&.Mui-selected': {
+          color: '#a855f7',
+          backgroundColor: 'transparent',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          },
+        },
+        minWidth: 0,
+      }}
+    >
+      <ListItemIcon
+        sx={{
+          minWidth: 36,
+          color: 'inherit',
+        }}
+      >
+        {icon}
+      </ListItemIcon>
+      <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
+        {label}
+      </Box>
+    </ListItemButton>
+  );
+
   return (
-    <AppBar position="static" sx={{ backgroundColor: '#040404' }}>
-      <Toolbar>
-        {/* Logo */}
+    <Box
+      component="nav"
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'row', md: 'column' },
+        alignItems: { xs: 'center', md: 'stretch' },
+        justifyContent: 'space-between',
+        bgcolor: '#000000',
+        borderBottom: { xs: '1px solid #181818', md: 'none' },
+        borderRight: { md: '1px solid #181818' },
+        width: { xs: '100%', md: 240 },
+        height: { xs: 'auto', md: '100%' },
+        flexShrink: 0,
+        px: { xs: 2, md: 1.5 },
+        py: { xs: 1, md: 2 },
+        gap: { xs: 1, md: 0 },
+        zIndex: 10,
+      }}
+    >
+      {/* Logo */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1 }}>
+        <MusicNoteIcon sx={{ color: '#a855f7' }} />
         <Typography
           variant="h6"
           component={Link}
           to="/"
           sx={{
-            flexGrow: 0,
             textDecoration: 'none',
             color: '#a855f7',
-            fontWeight: 'bold',
-            mr: 4,
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            whiteSpace: 'nowrap',
           }}
         >
-          🎵 MusicApp
+          MusicApp
         </Typography>
+      </Box>
 
-        {/* Navigation Links */}
-        <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
-          <Button
-            color="inherit"
-            component={Link}
-            to="/"
-            startIcon={<HomeIcon />}
+      {/* Nav items */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'row', md: 'column' },
+          alignItems: { xs: 'center', md: 'stretch' },
+          flex: { xs: '0 1 auto', md: '1 1 auto' },
+          gap: { xs: 0.5, md: 0.5 },
+        }}
+      >
+        {navItem('/', <HomeIcon fontSize="small" />, 'Home')}
+        {isAuthenticated && navItem('/songs', <LibraryMusicIcon fontSize="small" />, 'Your Music')}
+        {isAuthenticated && navItem('/settings', <SettingsIcon fontSize="small" />, 'Settings')}
+      </Box>
+
+      {/* User / Auth */}
+      <Box
+        sx={{
+          mt: { md: 'auto' },
+          pt: { md: 2 },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-end', md: 'stretch' },
+        }}
+      >
+        {isAuthenticated && user ? (
+          <Box
             sx={{
-              color: isActive('/') ? '#a855f7' : '#b3b3b3',
-              '&:hover': {
-                color: '#a855f7',
-              },
-              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 1,
+              width: '100%',
+              justifyContent: { xs: 'flex-end', md: 'flex-start' },
             }}
           >
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-              Home
-            </Box>
-          </Button>
-
-          {isAuthenticated && (
-            <>
-              <Button
-                color="inherit"
-                component={Link}
-                to="/songs"
-                startIcon={<LibraryMusicIcon />}
-                sx={{
-                  color: isActive('/songs') ? '#a855f7' : '#b3b3b3',
-                  '&:hover': {
-                    color: '#a855f7',
-                  },
-                  minWidth: 0,
-                }}
-              >
-                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  Your Music
-                </Box>
-              </Button>
-
-              <Button
-                color="inherit"
-                component={Link}
-                to="/settings"
-                startIcon={<SettingsIcon />}
-                sx={{
-                  color: isActive('/settings') ? '#a855f7' : '#b3b3b3',
-                  '&:hover': {
-                    color: '#a855f7',
-                  },
-                  minWidth: 0,
-                }}
-              >
-                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  Settings
-                </Box>
-              </Button>
-            </>
-          )}
-        </Box>
-
-        {/* User Profile / Auth */}
-        {isAuthenticated && user ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton onClick={handleUserMenuClick} size="small">
+              <Avatar src={user.picture} alt={user.name} sx={{ width: 32, height: 32 }} />
+            </IconButton>
             <Typography
               variant="body2"
-              sx={{ color: '#b3b3b3', display: { xs: 'none', md: 'block' } }}
+              sx={{
+                color: '#b3b3b3',
+                display: { xs: 'none', md: 'block' },
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: 140,
+              }}
             >
               {user.name}
             </Typography>
-            <IconButton onClick={handleUserMenuClick} size="small">
-              <Avatar
-                src={user.picture}
-                alt={user.name}
-                sx={{ width: 32, height: 32 }}
-              />
-            </IconButton>
             <Menu
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
@@ -157,34 +192,35 @@ export const NavBar: React.FC = () => {
             variant="outlined"
             onClick={signIn}
             disabled={Boolean(error)}
+            startIcon={<GoogleIcon />}
+            size="small"
             sx={{
               color: error ? '#666' : '#a855f7',
               borderColor: error ? '#666' : '#a855f7',
-              '&:hover': !error ? {
-                borderColor: '#c084fc',
-                backgroundColor: 'rgba(168, 85, 247, 0.08)',
-              } : {},
+              borderRadius: '50px',
+              '&:hover': !error
+                ? {
+                    borderColor: '#c084fc',
+                    backgroundColor: 'rgba(168, 85, 247, 0.08)',
+                  }
+                : {},
               '&:disabled': {
                 borderColor: '#666',
                 color: '#666',
-              }
+              },
+              whiteSpace: 'nowrap',
             }}
           >
             {error ? (
-              'OAuth Not Configured'
+              'Not Configured'
             ) : (
-              <>
-                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  Sign In with Google
-                </Box>
-                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                  Sign In
-                </Box>
-              </>
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                Sign in with Google
+              </Box>
             )}
           </Button>
         )}
-      </Toolbar>
-    </AppBar>
+      </Box>
+    </Box>
   );
 };

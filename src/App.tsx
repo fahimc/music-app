@@ -138,6 +138,32 @@ const darkTheme = createTheme({
         },
       },
     },
+    MuiTabs: {
+      styleOverrides: {
+        indicator: {
+          backgroundColor: '#a855f7',
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 700,
+          color: '#b3b3b3',
+          '&.Mui-selected': {
+            color: '#ffffff',
+          },
+        },
+      },
+    },
+    MuiListItemText: {
+      styleOverrides: {
+        primary: {
+          fontSize: '0.95rem',
+        },
+      },
+    },
   },
 });
 

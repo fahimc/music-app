@@ -18,7 +18,7 @@ A Spotify-style music player that streams **your own music from your own Google 
 
 - Node.js 22+
 - npm
-- A Google Cloud project with the **Drive API** enabled and **OAuth 2.0** credentials
+- For the default **central mode**: one Google Cloud project with the **Drive API** enabled and **OAuth 2.0** credentials (yours)
 
 ### Run it
 
@@ -27,19 +27,31 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. On first launch, the built-in **setup wizard** walks you through connecting Google: it deep-links to the Google Cloud Console pages you need, shows you exactly which origin to authorize, and lets you paste your Client ID — no command line required.
+Open `http://localhost:5173`. If the build ships with a Client ID (see below), users just click **Sign in with Google** — nothing else to set up.
 
-Prefer a `.env` file? Copy `.env.example` to `.env` and fill in `VITE_GOOGLE_CLIENT_ID` (and optionally `VITE_GOOGLE_DRIVE_FOLDER_ID` to skip the in-app folder picker).
+### Two ways to configure Google
 
-### Google API setup (one-time)
+**Central mode (recommended, default for the deployed app)** — you (the app owner) put your Client ID in the build, and every user signs in with their own Google account. Users never touch Google Cloud Console.
+
+```bash
+cp .env.example .env
+# fill in VITE_GOOGLE_CLIENT_ID with YOUR client ID
+npm run build
+```
+
+**Bring-your-own mode** — for self-hosting or personal use. Build without a Client ID (leave `VITE_GOOGLE_CLIENT_ID` empty), and the in-app wizard walks each user through creating their own Google project, Client ID, and origin. To do this after the app is built, use **Settings → Use My Own Client ID**.
+
+### One-time Google API setup (app owner)
 
 1. [Create a Google Cloud project](https://console.cloud.google.com/projectcreate)
 2. [Enable the Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
-3. [Create OAuth credentials](https://console.cloud.google.com/apis/credentials) (type: Web application)
-4. Add your app's origin (e.g. `http://localhost:5173` or your deployed URL) to **Authorized JavaScript origins**
-5. Paste the Client ID into the app — that's it, no API key needed
+3. [Create OAuth credentials](https://console.cloud.google.com/apis/credentials)
+   - **Web application** client — used by the web app and as the `webClientId` for native sign-in
+   - **Android** client — used by the APK (package name `com.fahimc.music` + your signing key's SHA-1)
+4. Add your app's web origin (e.g. `http://localhost:5173`, your deployed URL) to the **web client's** Authorized JavaScript origins
+5. Put the web Client ID in `.env` and rebuild
 
-> Changes to OAuth settings can take a few minutes to propagate. The setup wizard inside the app includes these exact steps with deep links.
+> Changes to OAuth settings can take a few minutes to propagate. With many users, you'll also want to complete Google's OAuth app verification (free, one-time) so the "unverified app" screen goes away past ~100 users.
 
 ## 📱 Android App
 
@@ -50,6 +62,8 @@ The Android app is built with [Capacitor](https://capacitorjs.com/) and packaged
 1. Grab the latest APK from the **Releases** page of this repo
 2. Sideload it onto your Android device (allow "install from unknown sources")
 3. Open it, run the setup wizard, and sign in with Google
+
+> **For the APK to sign in, the Android OAuth client in Google Cloud Console must match the build's signing key:** the debug APK uses your debug keystore's SHA-1, the release APK uses the release key's SHA-1 (and if you publish to Play, Play App Signing's SHA-1). Get the SHA-1 with `cd android && ./gradlew signingReport` (debug) or `keytool -printcert -jarfile <your.apk>` (release). If sign-in fails with `28444`, the package name (`com.fahimc.music`) or SHA-1 doesn't match what's registered.
 
 ### Build it yourself
 
@@ -76,7 +90,7 @@ git push origin v1.0.0
 - **UI:** Material UI 7 with a custom purple Spotify-style theme
 - **Routing:** React Router
 - **Storage:** IndexedDB via Dexie (offline songs, playlists)
-- **Google:** Google Identity Services (OAuth) + Drive REST API
+- **Google:** Google Identity Services (web) + native Google Sign-In (Android) + Drive REST API
 - **Mobile:** Capacitor 7 (Android)
 - **Testing:** Vitest + React Testing Library
 

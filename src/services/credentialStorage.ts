@@ -12,6 +12,53 @@ interface CredentialValidationResult {
 
 class CredentialStorageService {
   private readonly STORAGE_KEY = 'music_app_google_credentials';
+  private readonly FOLDER_STORAGE_KEY = 'music_app_google_folder';
+
+  /**
+   * Save the user's Drive music folder selection. Stored independently of
+   * OAuth credentials so it persists in central mode (where the Client ID
+   * comes from the build and nothing is written to credential storage).
+   */
+  saveFolder(folderId: string, folderName: string): void {
+    try {
+      localStorage.setItem(this.FOLDER_STORAGE_KEY, JSON.stringify({ folderId, folderName }));
+    } catch (error) {
+      console.error('Error saving folder:', error);
+    }
+  }
+
+  /**
+   * Load the user's Drive music folder selection, falling back to the folder
+   * stored inside legacy credentials for users who set it up before folders
+   * were stored separately.
+   */
+  loadFolder(): { folderId?: string; folderName?: string } | null {
+    try {
+      const stored = localStorage.getItem(this.FOLDER_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored) as { folderId?: string; folderName?: string };
+      }
+      const credentials = this.loadCredentials();
+      if (credentials?.folderId) {
+        return { folderId: credentials.folderId, folderName: credentials.folderName };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error loading folder:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear the stored Drive folder selection.
+   */
+  clearFolder(): void {
+    try {
+      localStorage.removeItem(this.FOLDER_STORAGE_KEY);
+    } catch (error) {
+      console.error('Error clearing folder:', error);
+    }
+  }
   
   /**
    * Save Google API credentials to localStorage
@@ -66,6 +113,26 @@ class CredentialStorageService {
   hasCredentials(): boolean {
     const credentials = this.loadCredentials();
     return credentials !== null && Boolean(credentials.clientId);
+  }
+
+  /**
+   * Effective Client ID in use: a user-provided override (stored) takes
+   * precedence, otherwise the app's built-in Client ID baked in at build
+   * time via VITE_GOOGLE_CLIENT_ID. Empty string means neither is set.
+   */
+  getClientId(): string {
+    const stored = this.loadCredentials();
+    if (stored?.clientId) {
+      return stored.clientId;
+    }
+    return import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  }
+
+  /**
+   * True when a usable Client ID is available (user override or built-in).
+   */
+  isConfigured(): boolean {
+    return Boolean(this.getClientId());
   }
 
   /**

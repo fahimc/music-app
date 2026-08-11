@@ -12,6 +12,15 @@ const config: CapacitorConfig = {
     path: "android",
   },
   plugins: {
+    SocialLogin: {
+      providers: {
+        google: true,
+        facebook: false,
+        apple: false,
+        twitter: false,
+      },
+      logLevel: 1,
+    },
     SplashScreen: {
       launchAutoHide: true,
       backgroundColor: "#121212",

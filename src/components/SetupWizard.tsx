@@ -40,12 +40,12 @@ interface SetupWizardProps {
   onComplete: () => void;
 }
 
-const STEP_LABELS = [
-  'Connect Google',
-  'Authorize this site',
-  'Sign in with Google',
-  'Choose your music folder',
-];
+type StepKey = 'clientid' | 'origin' | 'signin' | 'folder';
+
+interface WizardStep {
+  key: StepKey;
+  label: string;
+}
 
 export const SetupWizard: React.FC<SetupWizardProps> = ({
   open,
@@ -54,6 +54,13 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
 }) => {
   const { isAuthenticated, user, signIn, isLoading, reinitialize, error: authError } = useAuth();
 
+  // 'central': the app ships with a built-in Client ID, users just sign in.
+  // 'selfhost': no built-in Client ID, the user pastes their own.
+  const [setupMode, setSetupMode] = useState<'central' | 'selfhost'>('central');
+  const [steps, setSteps] = useState<WizardStep[]>([
+    { key: 'signin', label: 'Sign in with Google' },
+    { key: 'folder', label: 'Choose your music folder' },
+  ]);
   const [activeStep, setActiveStep] = useState(0);
   const [clientId, setClientId] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -72,14 +79,36 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   useEffect(() => {
     if (open) {
       const creds = credentialStorageService.loadCredentials();
-      const hasCreds = Boolean(creds?.clientId);
+      const savedFolder = credentialStorageService.loadFolder();
+      const hasClientId = credentialStorageService.isConfigured();
+      const hasStored = Boolean(creds?.clientId);
       setClientId(creds?.clientId || '');
       setFolder({
-        id: creds?.folderId || '',
-        name: creds?.folderName || 'My Drive (Root)',
+        id: savedFolder?.folderId || '',
+        name: savedFolder?.folderName || 'My Drive (Root)',
       });
-      // Skip straight to the origin check when credentials already exist
-      setActiveStep(hasCreds ? 1 : 0);
+
+      if (hasClientId) {
+        // Central mode (or an existing override): skip straight to sign-in.
+        setSetupMode('central');
+        setSteps([
+          { key: 'signin', label: 'Sign in with Google' },
+          { key: 'folder', label: 'Choose your music folder' },
+        ]);
+        setActiveStep(0);
+      } else {
+        // Self-host mode: full Client ID flow. With stored creds, jump past
+        // the paste step to the origin check.
+        setSetupMode('selfhost');
+        setSteps([
+          { key: 'clientid', label: 'Connect Google' },
+          { key: 'origin', label: 'Authorize this site' },
+          { key: 'signin', label: 'Sign in with Google' },
+          { key: 'folder', label: 'Choose your music folder' },
+        ]);
+        setActiveStep(hasStored ? 1 : 0);
+      }
+
       setValidationErrors([]);
       setCopied(false);
     }
@@ -130,18 +159,216 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
   };
 
   const handleFinish = () => {
-    const creds = credentialStorageService.loadCredentials();
-    if (creds) {
-      credentialStorageService.saveCredentials({
-        ...creds,
-        folderId: folder.id,
-        folderName: folder.name,
-      });
-    }
+    credentialStorageService.saveFolder(folder.id, folder.name);
     onComplete();
   };
 
-  const isLastStep = activeStep === STEP_LABELS.length - 1;
+  const currentKey = steps[activeStep]?.key;
+
+  const renderStepContent = (key: StepKey) => {
+    switch (key) {
+      case 'clientid':
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Alert severity="info" icon={<VpnKeyIcon />}>
+              Paste your Google OAuth Client ID to connect your Drive.
+            </Alert>
+
+            {validationErrors.length > 0 && (
+              <Alert severity="error">
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {validationErrors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </Alert>
+            )}
+
+            <TextField
+              label="Google OAuth Client ID *"
+              value={clientId}
+              onChange={(e) => {
+                setClientId(e.target.value);
+                setValidationErrors([]);
+              }}
+              placeholder="123456789-abcdef...xyz.apps.googleusercontent.com"
+              fullWidth
+              InputProps={{ sx: { backgroundColor: '#2a2a2a' } }}
+              helperText="It ends in .apps.googleusercontent.com"
+            />
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: 1,
+              }}
+            >
+              <Button
+                component="a"
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="outlined"
+                startIcon={<GoogleIcon />}
+                sx={{
+                  borderColor: '#a855f7',
+                  color: '#a855f7',
+                  '&:hover': { borderColor: '#c084fc' },
+                }}
+              >
+                Get a Client ID from Google
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<HelpIcon />}
+                onClick={() => setShowInstructions(true)}
+                sx={{
+                  borderColor: '#4a4a4a',
+                  color: '#b3b3b3',
+                  '&:hover': { borderColor: '#a855f7', color: '#a855f7' },
+                }}
+              >
+                Step-by-step instructions
+              </Button>
+            </Box>
+          </Box>
+        );
+
+      case 'origin':
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Alert severity="warning">
+              Add this exact URL to your OAuth Client's{' '}
+              <strong>Authorized JavaScript origins</strong> in Google
+              Cloud Console, then wait a few minutes.
+            </Alert>
+
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                flexDirection: { xs: 'column', sm: 'row' },
+              }}
+            >
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  width: { xs: '100%', sm: 'auto' },
+                  overflow: 'hidden',
+                  p: 1.5,
+                  bgcolor: '#0a0a0a',
+                  borderRadius: 1,
+                  border: '1px solid #a855f7',
+                }}
+              >
+                <Typography
+                  variant="body1"
+                  component="code"
+                  sx={{
+                    fontFamily: 'monospace',
+                    color: '#a855f7',
+                    fontWeight: 'bold',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {currentOrigin}
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={copied ? <CheckIcon /> : <CopyIcon />}
+                onClick={handleCopyOrigin}
+                sx={{
+                  flexShrink: 0,
+                  alignSelf: { xs: 'flex-end', sm: 'center' },
+                  borderColor: '#a855f7',
+                  color: copied ? '#c084fc' : '#a855f7',
+                  '&:hover': { borderColor: '#c084fc' },
+                }}
+              >
+                {copied ? 'Copied' : 'Copy'}
+              </Button>
+            </Box>
+
+            <Link
+              href="https://console.cloud.google.com/apis/credentials"
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ color: '#a855f7' }}
+            >
+              Open Google Cloud Console →
+            </Link>
+          </Box>
+        );
+
+      case 'signin':
+        return (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {isAuthenticated && user ? (
+              <Alert severity="success" icon={<CheckIcon />}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar src={user.picture} sx={{ width: 32, height: 32 }} />
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      Signed in as {user.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {user.email}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Alert>
+            ) : (
+              <>
+                <Alert severity="info">
+                  Sign in with the Google account that owns your music
+                  folder. Only read access to your Drive is requested.
+                </Alert>
+                {authError && (
+                  <Alert severity="error">{authError}</Alert>
+                )}
+                <Box>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<GoogleIcon />}
+                    onClick={handleSignIn}
+                    disabled={isLoading}
+                    sx={{
+                      bgcolor: '#a855f7',
+                      '&:hover': { bgcolor: '#c084fc' },
+                    }}
+                  >
+                    {isLoading ? (
+                      <CircularProgress size={20} sx={{ color: 'white' }} />
+                    ) : (
+                      'Sign In with Google'
+                    )}
+                  </Button>
+                </Box>
+              </>
+            )}
+          </Box>
+        );
+
+      case 'folder':
+        return (
+          <FolderPicker
+            currentFolderId={folder.id}
+            onSelectionChange={(id, name) => setFolder({ id, name })}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
@@ -161,207 +388,17 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
 
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          A few quick steps to connect your own Google Drive music folder.
+          {setupMode === 'central'
+            ? 'Connect your own Google Drive music folder in a couple of quick steps.'
+            : 'A few quick steps to connect your own Google Drive music folder.'}
         </Typography>
 
         <Stepper activeStep={activeStep} orientation="vertical">
-          {STEP_LABELS.map((label, index) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
+          {steps.map((step) => (
+            <Step key={step.key}>
+              <StepLabel>{step.label}</StepLabel>
               <StepContent>
-                {index === 0 && (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Alert severity="info" icon={<VpnKeyIcon />}>
-                      Paste your Google OAuth Client ID to connect your Drive.
-                    </Alert>
-
-                    {validationErrors.length > 0 && (
-                      <Alert severity="error">
-                        <ul style={{ margin: 0, paddingLeft: 20 }}>
-                          {validationErrors.map((err, i) => (
-                            <li key={i}>{err}</li>
-                          ))}
-                        </ul>
-                      </Alert>
-                    )}
-
-                    <TextField
-                      label="Google OAuth Client ID *"
-                      value={clientId}
-                      onChange={(e) => {
-                        setClientId(e.target.value);
-                        setValidationErrors([]);
-                      }}
-                      placeholder="123456789-abcdef...xyz.apps.googleusercontent.com"
-                      fullWidth
-                      InputProps={{ sx: { backgroundColor: '#2a2a2a' } }}
-                      helperText="It ends in .apps.googleusercontent.com"
-                    />
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        gap: 1,
-                      }}
-                    >
-                      <Button
-                        component="a"
-                        href="https://console.cloud.google.com/apis/credentials"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="outlined"
-                        startIcon={<GoogleIcon />}
-                        sx={{
-                          borderColor: '#a855f7',
-                          color: '#a855f7',
-                          '&:hover': { borderColor: '#c084fc' },
-                        }}
-                      >
-                        Get a Client ID from Google
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        startIcon={<HelpIcon />}
-                        onClick={() => setShowInstructions(true)}
-                        sx={{
-                          borderColor: '#4a4a4a',
-                          color: '#b3b3b3',
-                          '&:hover': { borderColor: '#a855f7', color: '#a855f7' },
-                        }}
-                      >
-                        Step-by-step instructions
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
-
-                {index === 1 && (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Alert severity="warning">
-                      Add this exact URL to your OAuth Client's{' '}
-                      <strong>Authorized JavaScript origins</strong> in Google
-                      Cloud Console, then wait a few minutes.
-                    </Alert>
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        flexDirection: { xs: 'column', sm: 'row' },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          flex: 1,
-                          minWidth: 0,
-                          width: { xs: '100%', sm: 'auto' },
-                          overflow: 'hidden',
-                          p: 1.5,
-                          bgcolor: '#0a0a0a',
-                          borderRadius: 1,
-                          border: '1px solid #a855f7',
-                        }}
-                      >
-                        <Typography
-                          variant="body1"
-                          component="code"
-                          sx={{
-                            fontFamily: 'monospace',
-                            color: '#a855f7',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {currentOrigin}
-                        </Typography>
-                      </Box>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={copied ? <CheckIcon /> : <CopyIcon />}
-                        onClick={handleCopyOrigin}
-                        sx={{
-                          flexShrink: 0,
-                          alignSelf: { xs: 'flex-end', sm: 'center' },
-                          borderColor: '#a855f7',
-                          color: copied ? '#c084fc' : '#a855f7',
-                          '&:hover': { borderColor: '#c084fc' },
-                        }}
-                      >
-                        {copied ? 'Copied' : 'Copy'}
-                      </Button>
-                    </Box>
-
-                    <Link
-                      href="https://console.cloud.google.com/apis/credentials"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ color: '#a855f7' }}
-                    >
-                      Open Google Cloud Console →
-                    </Link>
-                  </Box>
-                )}
-
-                {index === 2 && (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {isAuthenticated && user ? (
-                      <Alert severity="success" icon={<CheckIcon />}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar src={user.picture} sx={{ width: 32, height: 32 }} />
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                              Signed in as {user.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {user.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Alert>
-                    ) : (
-                      <>
-                        <Alert severity="info">
-                          Sign in with the Google account that owns your music
-                          folder. Only read access to your Drive is requested.
-                        </Alert>
-                        {authError && (
-                          <Alert severity="error">{authError}</Alert>
-                        )}
-                        <Box>
-                          <Button
-                            variant="contained"
-                            size="large"
-                            startIcon={<GoogleIcon />}
-                            onClick={handleSignIn}
-                            disabled={isLoading}
-                            sx={{
-                              bgcolor: '#a855f7',
-                              '&:hover': { bgcolor: '#c084fc' },
-                            }}
-                          >
-                            {isLoading ? (
-                              <CircularProgress size={20} sx={{ color: 'white' }} />
-                            ) : (
-                              'Sign In with Google'
-                            )}
-                          </Button>
-                        </Box>
-                      </>
-                    )}
-                  </Box>
-                )}
-
-                {index === 3 && (
-                  <FolderPicker
-                    currentFolderId={folder.id}
-                    onSelectionChange={(id, name) => setFolder({ id, name })}
-                  />
-                )}
+                {renderStepContent(step.key)}
               </StepContent>
             </Step>
           ))}
@@ -382,7 +419,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           </Button>
         )}
 
-        {activeStep === 0 && (
+        {currentKey === 'clientid' && (
           <Button
             variant="contained"
             onClick={handleSaveCredentials}
@@ -393,7 +430,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           </Button>
         )}
 
-        {activeStep === 1 && (
+        {currentKey === 'origin' && (
           <Button
             variant="contained"
             onClick={() => setActiveStep(2)}
@@ -403,10 +440,10 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           </Button>
         )}
 
-        {activeStep === 2 && (
+        {currentKey === 'signin' && (
           <Button
             variant="contained"
-            onClick={() => setActiveStep(3)}
+            onClick={() => setActiveStep(activeStep + 1)}
             disabled={!isAuthenticated}
             sx={{ bgcolor: '#a855f7', '&:hover': { bgcolor: '#c084fc' } }}
           >
@@ -414,7 +451,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
           </Button>
         )}
 
-        {isLastStep && (
+        {currentKey === 'folder' && (
           <Button
             variant="contained"
             onClick={handleFinish}
@@ -426,7 +463,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = ({
       </DialogActions>
     </Dialog>
 
-    {/* Step-by-step Google setup instructions popup */}
+    {/* Step-by-step Google setup instructions popup (self-host mode) */}
     <Dialog
       open={showInstructions}
       onClose={() => setShowInstructions(false)}

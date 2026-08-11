@@ -50,15 +50,9 @@ export const FolderSelectionDialog: React.FC<FolderSelectionDialogProps> = ({
       return;
     }
 
-    // Save folder ID and name to credentials
-    const credentials = credentialStorageService.loadCredentials();
-    if (credentials) {
-      credentialStorageService.saveCredentials({
-        ...credentials,
-        folderId: selectedFolder.id,
-        folderName: selectedFolder.name,
-      });
-    }
+    // Save folder ID and name (stored independently of OAuth credentials,
+    // so it works in central mode where nothing is stored)
+    credentialStorageService.saveFolder(selectedFolder.id, selectedFolder.name);
 
     onFolderSelected(selectedFolder.id, selectedFolder.name);
     onClose();

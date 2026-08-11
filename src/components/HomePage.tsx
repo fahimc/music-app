@@ -4,20 +4,19 @@ import {
   Typography,
   Button,
   Box,
-  Card,
-  CardContent,
   Grid,
   CircularProgress,
   Alert,
   Link,
+  Avatar,
 } from '@mui/material';
 import {
-  CloudDownload as CloudDownloadIcon,
-  MusicNote as MusicNoteIcon,
+  LibraryMusic as LibraryMusicIcon,
   CloudOff as OfflineIcon,
-  Google as GoogleIcon,
   Settings as SettingsIcon,
+  Google as GoogleIcon,
   FolderOpen as FolderOpenIcon,
+  MusicNote as MusicNoteIcon,
 } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,45 +24,85 @@ import { SetupWizard } from './SetupWizard';
 import { FolderSelectionDialog } from './FolderSelectionDialog';
 import { credentialStorageService } from '../services/credentialStorage';
 
-const FeatureCard: React.FC<{
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
+
+const cardGradients = [
+  'linear-gradient(135deg, #7c3aed 0%, #a855f7 60%, #d8b4fe 100%)',
+  'linear-gradient(135deg, #9333ea 0%, #6d28d9 100%)',
+  'linear-gradient(135deg, #581c87 0%, #7c3aed 100%)',
+  'linear-gradient(135deg, #4c1d95 0%, #9333ea 100%)',
+];
+
+interface QuickCardProps {
   icon: React.ReactNode;
   title: string;
-  description: string;
-}> = ({ icon, title, description }) => (
-  <Card
+  subtitle: string;
+  gradient: string;
+  onClick: () => void;
+}
+
+const QuickCard: React.FC<QuickCardProps> = ({ icon, title, subtitle, gradient, onClick }) => (
+  <Box
+    component="button"
+    onClick={onClick}
     sx={{
-      height: '100%',
       display: 'flex',
-      flexDirection: 'column',
-      transition: 'transform 0.2s ease-in-out',
+      alignItems: 'center',
+      gap: 2,
+      width: '100%',
+      p: 0,
+      border: 'none',
+      cursor: 'pointer',
+      textAlign: 'left',
+      bgcolor: '#181818',
+      color: 'white',
+      borderRadius: 1.5,
+      overflow: 'hidden',
+      transition: 'background-color 0.2s ease, transform 0.2s ease',
       '&:hover': {
-        transform: 'translateY(-4px)',
+        bgcolor: '#282828',
+        transform: 'translateY(-2px)',
       },
     }}
   >
-    <CardContent
+    <Box
       sx={{
-        flexGrow: 1,
+        width: 64,
+        height: 64,
+        flexShrink: 0,
+        background: gradient,
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
-        textAlign: 'center',
-        p: 3,
+        justifyContent: 'center',
+        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.08)',
       }}
     >
-      <Box sx={{ color: '#a855f7', mb: 2 }}>{icon}</Box>
-      <Typography variant="h6" component="h3" gutterBottom>
+      {icon}
+    </Box>
+    <Box sx={{ minWidth: 0, pr: 1 }}>
+      <Typography
+        variant="body1"
+        sx={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+      >
         {title}
       </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {description}
+      <Typography
+        variant="caption"
+        sx={{ color: '#b3b3b3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+      >
+        {subtitle}
       </Typography>
-    </CardContent>
-  </Card>
+    </Box>
+  </Box>
 );
 
 export const HomePage: React.FC = () => {
-  const { isAuthenticated, isLoading, signIn, error } = useAuth();
+  const { isAuthenticated, isLoading, signIn, error, user } = useAuth();
   const navigate = useNavigate();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [folderSelectionOpen, setFolderSelectionOpen] = useState(false);
@@ -71,17 +110,16 @@ export const HomePage: React.FC = () => {
   const [selectedFolder, setSelectedFolder] = useState<string>('');
 
   useEffect(() => {
-    // Check if credentials are available
-    const hasStoredCredentials = credentialStorageService.hasCredentials();
-    setHasCredentials(hasStoredCredentials);
-    
+    // Configured = user-provided override or the app's built-in Client ID
+    const isConfigured = credentialStorageService.isConfigured();
+    setHasCredentials(isConfigured);
+
     // Load selected folder
-    const credentials = credentialStorageService.loadCredentials();
-    setSelectedFolder(credentials?.folderId || '');
-    
-    // Auto-open the setup wizard if no credentials are stored (first time user)
-    if (!hasStoredCredentials) {
-      // Small delay to let the page render first
+    const folder = credentialStorageService.loadFolder();
+    setSelectedFolder(folder?.folderId || '');
+
+    // Auto-open the setup wizard on first run
+    if (!isConfigured) {
       setTimeout(() => setWizardOpen(true), 500);
     }
   }, []);
@@ -123,8 +161,10 @@ export const HomePage: React.FC = () => {
     );
   }
 
+  const greeting = getGreeting();
+
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="lg" sx={{ py: 4, px: { xs: 2, md: 4 } }}>
       {/* Authorization Error Alert */}
       {error && error.includes('Authorization Origin Error') && (
         <Alert severity="error" sx={{ mb: 4 }}>
@@ -132,28 +172,50 @@ export const HomePage: React.FC = () => {
             <strong>🔒 Authorization Origin Not Configured</strong>
           </Typography>
           <Typography variant="body2" sx={{ mb: 1 }}>
-            Your current URL <code style={{ 
-              backgroundColor: '#2a2a2a', 
-              padding: '2px 6px', 
-              borderRadius: '4px',
-              color: '#a855f7'
-            }}>{window.location.origin}</code> is not authorized in your Google OAuth settings.
+            Your current URL{' '}
+            <code
+              style={{
+                backgroundColor: '#2a2a2a',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                color: '#a855f7',
+              }}
+            >
+              {window.location.origin}
+            </code>{' '}
+            is not authorized in your Google OAuth settings.
           </Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
             To fix this:
           </Typography>
           <Box component="ol" sx={{ pl: 3, mb: 2, fontSize: '0.875rem' }}>
-            <li>Go to <Link href="https://console.cloud.google.com/apis/credentials" target="_blank" sx={{ color: '#a855f7' }}>Google Cloud Console Credentials</Link></li>
+            <li>
+              Go to{' '}
+              <Link
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                sx={{ color: '#a855f7' }}
+              >
+                Google Cloud Console Credentials
+              </Link>
+            </li>
             <li>Click on your OAuth 2.0 Client ID</li>
-            <li>Under "Authorized JavaScript origins", click <strong>+ ADD URI</strong></li>
-            <li>Add this exact URL: <code style={{ 
-              backgroundColor: '#2a2a2a', 
-              padding: '2px 6px', 
-              borderRadius: '4px',
-              color: '#a855f7',
-              fontWeight: 'bold'
-            }}>{window.location.origin}</code></li>
-            <li>Click <strong>Save</strong> and wait 5-10 minutes for changes to take effect</li>
+            <li>Under &quot;Authorized JavaScript origins&quot;, click + ADD URI</li>
+            <li>
+              Add this exact URL:{' '}
+              <code
+                style={{
+                  backgroundColor: '#2a2a2a',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  color: '#a855f7',
+                  fontWeight: 'bold',
+                }}
+              >
+                {window.location.origin}
+              </code>
+            </li>
+            <li>Click Save and wait 5-10 minutes for changes to take effect</li>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -176,40 +238,48 @@ export const HomePage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Hero Section */}
-      <Box
-        sx={{
-          textAlign: 'center',
-          mb: 8,
-          py: 6,
-        }}
-      >
-        <Typography
-          variant="h2"
-          component="h1"
-          gutterBottom
-          sx={{
-            fontWeight: 'bold',
-            background: 'linear-gradient(45deg, #a855f7, #c084fc)',
-            backgroundClip: 'text',
-            textFillColor: 'transparent',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          Your Music, Everywhere
-        </Typography>
-        <Typography
-          variant="h5"
-          color="text.secondary"
-          paragraph
-          sx={{ maxWidth: 600, mx: 'auto', mb: 4 }}
-        >
-          Stream and download your music from Google Drive. 
-          Enjoy your favorite songs online or offline, anytime, anywhere.
-        </Typography>
+      {/* Greeting */}
+      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography
+            variant="h3"
+            component="h1"
+            sx={{
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              background: 'linear-gradient(90deg, #ffffff 0%, #c084fc 100%)',
+              backgroundClip: 'text',
+              textFillColor: 'transparent',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            {isAuthenticated && user?.name ? `${greeting}, ${user.name.split(' ')[0]}` : greeting}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+            {isAuthenticated
+              ? 'Stream and download your own music from Google Drive.'
+              : 'Sign in to bring your Google Drive music here.'}
+          </Typography>
+        </Box>
 
-        {/* Show different buttons based on credential and auth status */}
+        {isAuthenticated && user && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar src={user.picture} sx={{ width: 40, height: 40 }} />
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {user.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {user.email}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+      </Box>
+
+      {/* CTA */}
+      <Box sx={{ mb: 5 }}>
         {!hasCredentials ? (
           <Button
             variant="contained"
@@ -221,10 +291,9 @@ export const HomePage: React.FC = () => {
               color: 'white',
               px: 4,
               py: 1.5,
-              fontSize: '1.1rem',
-              '&:hover': {
-                bgcolor: '#c084fc',
-              },
+              fontSize: '1rem',
+              borderRadius: '50px',
+              '&:hover': { bgcolor: '#c084fc' },
             }}
           >
             Set Up Google Drive Access
@@ -240,10 +309,9 @@ export const HomePage: React.FC = () => {
               color: 'white',
               px: 4,
               py: 1.5,
-              fontSize: '1.1rem',
-              '&:hover': {
-                bgcolor: '#c084fc',
-              },
+              fontSize: '1rem',
+              borderRadius: '50px',
+              '&:hover': { bgcolor: '#c084fc' },
             }}
           >
             Sign In with Google
@@ -254,15 +322,15 @@ export const HomePage: React.FC = () => {
             size="large"
             component={RouterLink}
             to="/songs"
+            startIcon={<LibraryMusicIcon />}
             sx={{
               bgcolor: '#a855f7',
               color: 'white',
               px: 4,
               py: 1.5,
-              fontSize: '1.1rem',
-              '&:hover': {
-                bgcolor: '#c084fc',
-              },
+              fontSize: '1rem',
+              borderRadius: '50px',
+              '&:hover': { bgcolor: '#c084fc' },
             }}
           >
             Browse Your Music
@@ -270,90 +338,80 @@ export const HomePage: React.FC = () => {
         )}
       </Box>
 
-      {/* Features Section */}
-      <Typography
-        variant="h4"
-        component="h2"
-        textAlign="center"
-        gutterBottom
-        sx={{ mb: 4 }}
-      >
-        Why Choose MusicApp?
+      {/* Quick access cards */}
+      <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 2 }}>
+        Quick access
       </Typography>
-
-      <Grid container spacing={4} sx={{ mb: 6 }}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <FeatureCard
-            icon={<CloudDownloadIcon sx={{ fontSize: 48 }} />}
-            title="Google Drive Integration"
-            description="Connect to your Google Drive and access your music library directly from the cloud. No need to upload files separately."
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <QuickCard
+            icon={<LibraryMusicIcon sx={{ fontSize: 32, color: 'white' }} />}
+            title="Your Music"
+            subtitle="Songs from your Drive"
+            gradient={cardGradients[0]}
+            onClick={() => navigate('/songs')}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <FeatureCard
-            icon={<OfflineIcon sx={{ fontSize: 48 }} />}
-            title="Offline Listening"
-            description="Download your favorite songs for offline listening. Perfect for commutes, flights, or areas with poor connectivity."
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <QuickCard
+            icon={<FolderOpenIcon sx={{ fontSize: 32, color: 'white' }} />}
+            title="Music Folder"
+            subtitle={selectedFolder ? 'Change your folder' : 'Pick your folder'}
+            gradient={cardGradients[1]}
+            onClick={() => setFolderSelectionOpen(true)}
           />
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <FeatureCard
-            icon={<MusicNoteIcon sx={{ fontSize: 48 }} />}
-            title="Rich Music Player"
-            description="Full-featured audio player with playlist support, shuffle, repeat, and all the controls you expect from a modern music app."
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <QuickCard
+            icon={<OfflineIcon sx={{ fontSize: 32, color: 'white' }} />}
+            title="Offline"
+            subtitle="Downloaded songs"
+            gradient={cardGradients[2]}
+            onClick={() => navigate('/settings')}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <QuickCard
+            icon={<SettingsIcon sx={{ fontSize: 32, color: 'white' }} />}
+            title="Settings"
+            subtitle="Account & storage"
+            gradient={cardGradients[3]}
+            onClick={() => navigate('/settings')}
           />
         </Grid>
       </Grid>
 
-      {/* Getting Started Section */}
-      {!isAuthenticated && (
-        <Box
-          sx={{
-            textAlign: 'center',
-            bgcolor: '#181818',
-            borderRadius: 2,
-            p: 4,
-            mt: 6,
-          }}
-        >
-          <Typography variant="h5" component="h3" gutterBottom>
-            Ready to Get Started?
+      {/* Getting started panel */}
+      <Box
+        sx={{
+          bgcolor: '#181818',
+          borderRadius: 2,
+          p: 4,
+          mt: 3,
+          border: '1px solid #282828',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+          <MusicNoteIcon sx={{ color: '#a855f7' }} />
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
+            {isAuthenticated ? 'All set up' : 'How it works'}
           </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph>
-            {!hasCredentials 
-              ? "First, set up your Google API credentials to connect your Drive."
-              : "Sign in with your Google account to connect your Drive and start listening to your music."
-            }
-          </Typography>
-          {!hasCredentials ? (
+        </Box>
+        <Typography variant="body2" color="text.secondary" paragraph>
+          {isAuthenticated
+            ? 'Your Google Drive is connected. Visit Your Music to stream and download songs, or change which folder is scanned.'
+            : 'Bring your own Google Drive folder. Sign in, pick a folder, and the app scans it for music — nothing is uploaded, and your files stay yours.'}
+        </Typography>
+        {!isAuthenticated && (
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2 }}>
             <Button
               variant="outlined"
-              size="large"
-              onClick={handleSetupCredentials}
-              startIcon={<SettingsIcon />}
-              sx={{
-                borderColor: '#a855f7',
-                color: '#a855f7',
-                px: 3,
-                '&:hover': {
-                  borderColor: '#c084fc',
-                  color: '#c084fc',
-                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
-                },
-              }}
-            >
-              Configure API Access
-            </Button>
-          ) : (
-            <Button
-              variant="outlined"
-              size="large"
               onClick={signIn}
               startIcon={<GoogleIcon />}
               sx={{
                 borderColor: '#a855f7',
                 color: '#a855f7',
-                px: 3,
+                borderRadius: '50px',
                 '&:hover': {
                   borderColor: '#c084fc',
                   color: '#c084fc',
@@ -363,9 +421,21 @@ export const HomePage: React.FC = () => {
             >
               Sign In with Google
             </Button>
-          )}
-        </Box>
-      )}
+            <Button
+              variant="outlined"
+              onClick={handleSetupCredentials}
+              sx={{
+                borderColor: '#4a4a4a',
+                color: '#b3b3b3',
+                borderRadius: '50px',
+                '&:hover': { borderColor: '#a855f7', color: '#a855f7' },
+              }}
+            >
+              Setup Instructions
+            </Button>
+          </Box>
+        )}
+      </Box>
 
       {/* Setup Wizard */}
       <SetupWizard
@@ -381,71 +451,6 @@ export const HomePage: React.FC = () => {
         onFolderSelected={handleFolderSelected}
         currentFolderId={selectedFolder}
       />
-
-      {/* App Status for Authenticated Users */}
-      {isAuthenticated && (
-        <Box
-          sx={{
-            textAlign: 'center',
-            bgcolor: '#181818',
-            borderRadius: 2,
-            p: 4,
-            mt: 6,
-          }}
-        >
-          <Typography variant="h5" component="h3" gutterBottom color="#a855f7">
-            Welcome Back!
-          </Typography>
-          <Typography variant="body1" color="text.secondary" paragraph>
-            You're all set up. Visit your music library to start streaming and downloading songs.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 3, flexWrap: 'wrap' }}>
-            <Button
-              variant="contained"
-              component={RouterLink}
-              to="/songs"
-              sx={{
-                bgcolor: '#a855f7',
-                '&:hover': { bgcolor: '#c084fc' },
-              }}
-            >
-              View Your Music
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => setFolderSelectionOpen(true)}
-              startIcon={<FolderOpenIcon />}
-              sx={{
-                borderColor: '#a855f7',
-                color: '#a855f7',
-                '&:hover': {
-                  borderColor: '#c084fc',
-                  color: '#c084fc',
-                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
-                },
-              }}
-            >
-              Change Music Folder
-            </Button>
-            <Button
-              variant="outlined"
-              component={RouterLink}
-              to="/settings"
-              sx={{
-                borderColor: '#a855f7',
-                color: '#a855f7',
-                '&:hover': {
-                  borderColor: '#c084fc',
-                  color: '#c084fc',
-                  backgroundColor: 'rgba(168, 85, 247, 0.08)',
-                },
-              }}
-            >
-              Manage Settings
-            </Button>
-          </Box>
-        </Box>
-      )}
     </Container>
   );
 };
